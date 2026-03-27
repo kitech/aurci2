@@ -8,6 +8,16 @@ on:
   schedule:
     - cron: "21 4 * * 0"
 
+###
+# lib32-gtk2
+# adwaita-dark
+# gtk-theme-switch2
+# lib32-libindicator-gtk2
+# yambar #build error
+# web-ext
+# emacs-lucid
+# chez-scheme
+# netlify 400M+
 jobs:
   build_repository:
     runs-on: ubuntu-latest
@@ -17,37 +27,38 @@ jobs:
       run: echo "::set-output name=date::$(date +'%Y-%m-%d %H:%M')"
 
     - name: Build Packages
-      uses: kopp/build-aur-packages@v1
+      uses: kitech/build-aur-packages@master
       with:
+        token: ${{ secrets.GITHUB_TOKEN }}
         packages: >
-          android-studio
-          arduino-ide-bin
-          azure-cli
-          conan
+          chez-scheme
+          lib32-libxpm
+          fcitx
+          sfwbar
+          ydcv
+          buku
+          recutils
+          deb2targz
+          lib32-openssl-1.1
+          multitail
+          libaegis
+          netlify
+          vercel
+          openlist-bin
+          qtscrcpy-bin
+          bin32-firefox-bin
+          emacs-locale-zh-cn
+          emacs-lucid-lite
           getmail6
-          google-cloud-cli
-          micronucleus-git
-          microsoft-edge-stable-bin
-          neovim-symlinks
-          onedrive-abraunegg
-          python-selenium
-          selenium-manager
-          uv-bin
-          jmtpfs
-          qtfm
-          skypeforlinux-stable-bin
           tp-battery-mode
           vdhcoapp-bin
-          visual-studio-code-bin
+          gtk2
+          gtk-theme-switch2
+          adwaita-dark
+          lib32-gtk2
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
-    - name: Remove the current data from the release
-      uses: kopp/action-delete-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: aurci2
     - name: Upload Files to Release
       uses: softprops/action-gh-release@v1
       env:
