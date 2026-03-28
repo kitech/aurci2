@@ -59,6 +59,7 @@ jobs:
           hexchat
           pidgin-gtkui
           bin32-filezilla-bin
+          tccx-git
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
