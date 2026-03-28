@@ -56,6 +56,9 @@ jobs:
           gtk-theme-switch2
           adwaita-dark
           lib32-gtk2
+          hexchat
+          pidgin-gtkui
+          bin32-filezilla-bin
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
