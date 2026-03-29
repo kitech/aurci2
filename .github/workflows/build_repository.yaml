@@ -74,6 +74,7 @@ jobs:
           tccx-git
           lib32-libmng
           lib32-unixodbc
+          gtkspell
           betterbird-bin
           smplayer-qt4x
 
