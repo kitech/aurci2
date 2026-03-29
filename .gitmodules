@@ -1,0 +1,12 @@
+[submodule "packages/emacs-lucid-lite"]
+	path = packages/emacs-lucid-lite
+	url = https://aur.archlinux.org/emacs-lucid-lite.git
+[submodule "packages/bin32-filezilla-bin"]
+	path = packages/bin32-filezilla-bin
+	url = https://aur.archlinux.org/bin32-filezilla-bin.git
+[submodule "packages/tccx-git"]
+	path = packages/tccx-git
+	url = https://aur.archlinux.org/tccx-git.git
+[submodule "packages/smplayer-qt4x"]
+	path = packages/smplayer-qt4x
+	url = https://aur.archlinux.org/smplayer-qt4x.git
