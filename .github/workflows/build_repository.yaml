@@ -42,7 +42,7 @@ jobs:
     - name: Build Packages
       uses: kitech/build-aur-packages@master
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ github.token }}
         packages: >
           chez-scheme
           lib32-libxpm
