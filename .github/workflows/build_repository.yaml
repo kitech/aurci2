@@ -70,6 +70,7 @@ jobs:
           lib32-libmng
           lib32-unixodbc
           lib32-qt4
+          betterbird-bin
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
