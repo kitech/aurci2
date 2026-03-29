@@ -18,6 +18,14 @@ on:
 # emacs-lucid
 # chez-scheme
 # netlify 400M+
+# pidgin-gtkui rebuild every time, disabled
+
+# failed packages
+# db5.2
+# lib32-sqlite2
+# lib32-qt3
+# libroxml
+
 jobs:
   build_repository:
     runs-on: ubuntu-latest
@@ -57,9 +65,11 @@ jobs:
           adwaita-dark
           lib32-gtk2
           hexchat
-          pidgin-gtkui
           bin32-filezilla-bin
           tccx-git
+          lib32-libmng
+          lib32-unixodbc
+          lib32-qt4
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
