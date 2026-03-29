@@ -9,22 +9,27 @@ on:
     - cron: "21 4 * * 0"
 
 ###
+
+# always rebuild packages
+# pidgin-gtkui rebuild every time, disabled
+# lib32-qt4
+
+# failed packages
+# web-ext
+# db5.2
+# lib32-sqlite2
+# lib32-qt3
+# libroxml
+
+# temp packages
 # lib32-gtk2
 # adwaita-dark
 # gtk-theme-switch2
 # lib32-libindicator-gtk2
 # yambar #build error
-# web-ext
 # emacs-lucid
 # chez-scheme
 # netlify 400M+
-# pidgin-gtkui rebuild every time, disabled
-
-# failed packages
-# db5.2
-# lib32-sqlite2
-# lib32-qt3
-# libroxml
 
 jobs:
   build_repository:
@@ -69,8 +74,8 @@ jobs:
           tccx-git
           lib32-libmng
           lib32-unixodbc
-          lib32-qt4
           betterbird-bin
+          smplayer-qt4x
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
