@@ -35,13 +35,18 @@ jobs:
   build_repository:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4 # Action to checkout your code
+
     - name: Get current time and date
       id: date
       run: echo "::set-output name=date::$(date +'%Y-%m-%d %H:%M')"
+          | pwd && ls
 
     - name: Build Packages
       uses: kitech/build-aur-packages@master
       with:
+        context: . # Explicitly set context to the current directory
         token: ${{ github.token }}
         packages: >
           chez-scheme
