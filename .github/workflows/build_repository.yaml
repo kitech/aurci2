@@ -77,6 +77,9 @@ jobs:
           gtkspell
           betterbird-bin
           smplayer-qt4x
+          sublime-text-2
+          deepseek-cli
+          noorfetch
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
