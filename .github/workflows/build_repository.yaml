@@ -35,8 +35,6 @@ jobs:
   build_repository:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4 # Action to checkout your code
 
     - name: Get current time and date
       id: date
@@ -46,8 +44,8 @@ jobs:
     - name: Build Packages
       uses: kitech/build-aur-packages@master
       with:
-        context: . # Explicitly set context to the current directory
         token: ${{ github.token }}
+        repourl: ${{ github.repo }}
         packages: >
           chez-scheme
           lib32-libxpm
@@ -85,6 +83,8 @@ jobs:
           sublime-text-2
           deepseek-cli
           noorfetch
+          postman9-bin
+          reqable-bin
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
