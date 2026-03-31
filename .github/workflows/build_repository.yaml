@@ -80,12 +80,14 @@ jobs:
           gtkspell
           betterbird-bin
           smplayer-qt4x
+          bin32-smplayer-qt4
           sublime-text-2
           deepseek-cli
           noorfetch
           postman9-bin
           reqable-bin
           addr2line-rs
+          m3u8-downloader-bin
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
