@@ -1,0 +1,45 @@
+# Maintainer: Rafael Dominiquini <rafaeldominiquini at gmail dot com>
+# Maintainer: limforge
+
+pkgname=addr2line-rs
+_pkgname=addr2line
+pkgver=0.26.1
+pkgrel=1
+pkgdesc="A cross-platform library for retrieving per-address debug information from files with DWARF debug informatio"
+arch=('x86_64')
+url="https://docs.rs/${_pkgname}"
+license=('Apache-2.0 OR MIT')
+makedepends=('cargo')
+depends=('glibc')
+source=("https://github.com/gimli-rs/${_pkgname}/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('b8c510ecce2c426fe476f33fbce4bf75dd0e2c5800ae94a9868d8a957483e5e7')
+
+prepare() {
+  cd "${_pkgname}-${pkgver}"
+
+  export CARGO_HOME="$srcdir/cargo-home"
+  cargo fetch --locked
+  echo "[lib]" >> Cargo.toml
+  echo "crate-type = [\"dylib\", \"rlib\"]" >> Cargo.toml
+}
+
+build() {
+  cd "${_pkgname}-${pkgver}"
+
+  export CARGO_HOME="${srcdir}/cargo-home"
+  export CARGO_TARGET_DIR=target
+  cargo build --frozen --release --features="bin"
+  cargo build --frozen --release
+}
+
+package() {
+  cd "${_pkgname}-${pkgver}"
+
+  cargo install --frozen --root "${pkgdir}/usr" --path . --no-track
+
+  mkdir -p ${pkgdir}/usr/{bin,lib}
+  install -Dm755 target/release/libaddr2line.rlib "${pkgdir}/usr/lib/"
+  install -Dm755 target/release/libaddr2line.so "${pkgdir}/usr/lib/"
+  install -Dm755 target/release/addr2line "${pkgdir}/usr/bin/${pkgname}"
+  # install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${_pkgname}/LICENSE"
+}

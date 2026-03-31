@@ -1,0 +1,13 @@
+pkgbase = addr2line-rs
+	pkgdesc = A cross-platform library for retrieving per-address debug information from files with DWARF debug informatio
+	pkgver = 0.26.1
+	pkgrel = 1
+	url = https://docs.rs/addr2line
+	arch = x86_64
+	license = Apache-2.0 OR MIT
+	makedepends = cargo
+	depends = glibc
+	source = https://github.com/gimli-rs/addr2line/archive/refs/tags/v0.26.1.tar.gz
+	sha256sums = b8c510ecce2c426fe476f33fbce4bf75dd0e2c5800ae94a9868d8a957483e5e7
+
+pkgname = addr2line-rs

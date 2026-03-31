@@ -85,6 +85,7 @@ jobs:
           noorfetch
           postman9-bin
           reqable-bin
+          addr2line-rs
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
