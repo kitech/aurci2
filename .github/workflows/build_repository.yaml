@@ -20,6 +20,7 @@ on:
 # lib32-sqlite2
 # lib32-qt3
 # libroxml
+# emacs-locale-zh-cn
 
 # temp packages
 # lib32-gtk2
@@ -63,7 +64,6 @@ jobs:
           openlist-bin
           qtscrcpy-bin
           bin32-firefox-bin
-          emacs-locale-zh-cn
           emacs-lucid-lite
           getmail6
           tp-battery-mode
@@ -72,6 +72,7 @@ jobs:
           gtk-theme-switch2
           adwaita-dark
           lib32-gtk2
+          claws-mail-gtk2
           hexchat
           bin32-filezilla-bin
           tccx-git
@@ -87,9 +88,10 @@ jobs:
           postman9-bin
           reqable-bin
           addr2line-rs
-          libroxml
           turso-bin
           ffmpeg7.1
+          libcoap
+          rclone-lite
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt

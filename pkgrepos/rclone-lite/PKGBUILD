@@ -2,9 +2,9 @@
 # Maintainer: T.J. Townsend <blakkheim@archlinux.org>
 # Contributor: Felix Yan <felixonmars@archlinux.org>
 
-pkgname=rclone
+pkgname=rclone-lite
 pkgver=1.73.3
-pkgrel=1
+pkgrel=3
 pkgdesc="rsync for cloud storage"
 arch=('x86_64')
 url="https://github.com/rclone/rclone"
@@ -18,15 +18,28 @@ validpgpkeys=(E3B358DC858FB307F48170B9CB0DBEBC5F32C81D) # Nick Craig-Wood
 options=(!lto)
 
 build() {
-  cd rclone
+    cd rclone
+
   export GOFLAGS="-buildmode=pie -trimpath"
   export CGO_LDFLAGS="${LDFLAGS}"
   export CGO_CFLAGS="${CFLAGS}"
   export CGO_CPPFLAGS="${CPPFLAGS}"
-  PATH="/build/go/bin:$PATH" make TAG=v$pkgver rclone
-  PATH="/build/go/bin:$PATH" rclone genautocomplete bash rclone.bash_completion
-  PATH="/build/go/bin:$PATH" rclone genautocomplete zsh rclone.zsh_completion
-  PATH="/build/go/bin:$PATH" rclone genautocomplete fish rclone.fish_completion
+  PATH="/build/go/bin:$PATH" make V=0 TAG=v$pkgver rclone
+  cp ./rclone ./rclone.ori
+  ls -lh | grep rclone
+  for bkd in "qingstor azureblob azurefiles box dropbox seafile sia storj iclouddrive swift oracleobjectstorage"; do
+      rm -rf "backend/${bkd}"
+      sed -i 's/_ "github.com\/rclone\/rclone\/backend\/${bkd}"//' backend/all/all.go
+  done
+  GOARCH=386 CGO_ENABLED=1 PATH="/build/go/bin:$PATH" make V=0 TAG=v$pkgver rclone
+  cp ./rclone ./rclone-x32
+  PATH="/build/go/bin:$PATH" make V=0 TAG=v$pkgver rclone
+  ls -lh | grep rclone
+  file rclone-x32 rclone
+
+  PATH="/build/go/bin:$PATH" ./rclone genautocomplete bash rclone.bash_completion
+  PATH="/build/go/bin:$PATH" ./rclone genautocomplete zsh rclone.zsh_completion
+  PATH="/build/go/bin:$PATH" ./rclone genautocomplete fish rclone.fish_completion
 }
 
 #check() {
