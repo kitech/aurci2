@@ -89,6 +89,7 @@ jobs:
           addr2line-rs
           libroxml
           turso-bin
+          ffmpeg7.1
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
