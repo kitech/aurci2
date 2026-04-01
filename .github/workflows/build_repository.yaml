@@ -92,6 +92,7 @@ jobs:
           ffmpeg7.1
           libcoap
           rclone-lite
+          motrix-bin
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
