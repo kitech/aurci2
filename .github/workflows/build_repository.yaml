@@ -93,6 +93,7 @@ jobs:
           libcoap
           rclone-lite
           motrix-bin
+          qrcode-rust
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt

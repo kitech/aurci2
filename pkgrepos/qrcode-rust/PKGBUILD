@@ -16,8 +16,10 @@ sha256sums=('4c97b35f599282571198710947d82d05b96eb309dd1ba65840f8877d608babb2')
 prepare() {
   cd "${pkgname}-${pkgver}"
 
+  set -x
   export CARGO_HOME="$srcdir/cargo-home"
-  cargo fetch --locked
+  # cargo fetch --locked
+  cargo fetch
   echo "[lib]" >> Cargo.toml
   echo "crate-type = [\"dylib\", \"rlib\"]" >> Cargo.toml
 }
@@ -29,7 +31,7 @@ build() {
   export CARGO_TARGET_DIR=target
   # cargo build --frozen --release --features="bin"
   cargo build --frozen --release
-  ls -lh target/
+  ls -lh target/release/
 }
 
 package() {
@@ -38,8 +40,9 @@ package() {
   cargo install --frozen --root "${pkgdir}/usr" --path . --no-track
 
   mkdir -p ${pkgdir}/usr/{bin,lib}
-  install -Dm755 target/release/libqrcode-rust.rlib "${pkgdir}/usr/lib/"
-  install -Dm755 target/release/libqrcode-rust.so "${pkgdir}/usr/lib/"
-  install -Dm755 target/release/qrencode "${pkgdir}/usr/bin/${pkgname}"
+  install -Dm755 target/release/libqrcode.rlib "${pkgdir}/usr/lib/"
+  install -Dm755 target/release/libqrcode.so "${pkgdir}/usr/lib/libqrcode-rs.so"
+  # install -Dm755 target/release/qrencode "${pkgdir}/usr/bin/${pkgname}-rs"
   # install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  mv ${pkgdir}/usr/bin/{qrencode,qrencode-rs}
 }
