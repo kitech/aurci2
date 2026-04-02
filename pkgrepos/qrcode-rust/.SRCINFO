@@ -1,0 +1,13 @@
+pkgbase = qrcode-rust
+	pkgdesc = A cross-platform library for retrieving per-address debug information from files with DWARF debug informatio
+	pkgver = 0.14.1
+	pkgrel = 1
+	url = https://docs.rs/
+	arch = x86_64
+	license = Apache-2.0 OR MIT
+	makedepends = cargo
+	depends = glibc
+	source = https://github.com/kennytm/qrcode-rust/archive/refs/tags/v0.14.1.tar.gz
+	sha256sums = 4c97b35f599282571198710947d82d05b96eb309dd1ba65840f8877d608babb2
+
+pkgname = qrcode-rust

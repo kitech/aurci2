@@ -1,0 +1,45 @@
+# Maintainer: Rafael Dominiquini <rafaeldominiquini at gmail dot com>
+# Maintainer: limforge
+
+pkgname=qrcode-rust
+pkgver=0.14.1
+pkgrel=1
+pkgdesc="A cross-platform library for retrieving per-address debug information from files with DWARF debug informatio"
+arch=('x86_64')
+url="https://docs.rs/${_pkgname}"
+license=('Apache-2.0 OR MIT')
+makedepends=('cargo')
+depends=('glibc')
+source=("https://github.com/kennytm/${pkgname}/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('4c97b35f599282571198710947d82d05b96eb309dd1ba65840f8877d608babb2')
+
+prepare() {
+  cd "${pkgname}-${pkgver}"
+
+  export CARGO_HOME="$srcdir/cargo-home"
+  cargo fetch --locked
+  echo "[lib]" >> Cargo.toml
+  echo "crate-type = [\"dylib\", \"rlib\"]" >> Cargo.toml
+}
+
+build() {
+  cd "${pkgname}-${pkgver}"
+
+  export CARGO_HOME="${srcdir}/cargo-home"
+  export CARGO_TARGET_DIR=target
+  # cargo build --frozen --release --features="bin"
+  cargo build --frozen --release
+  ls -lh target/
+}
+
+package() {
+  cd "${pkgname}-${pkgver}"
+
+  cargo install --frozen --root "${pkgdir}/usr" --path . --no-track
+
+  mkdir -p ${pkgdir}/usr/{bin,lib}
+  install -Dm755 target/release/libqrcode-rust.rlib "${pkgdir}/usr/lib/"
+  install -Dm755 target/release/libqrcode-rust.so "${pkgdir}/usr/lib/"
+  install -Dm755 target/release/qrencode "${pkgdir}/usr/bin/${pkgname}"
+  # install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
