@@ -29,6 +29,7 @@ build() {
 
   export CARGO_HOME="${srcdir}/cargo-home"
   export CARGO_TARGET_DIR=target
+  export RUSTFLAGS="-C prefer-dynamic"
   # cargo build --frozen --release --features="bin"
   cargo build --frozen --release
   ls -lh target/release/

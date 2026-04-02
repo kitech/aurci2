@@ -4,7 +4,7 @@
 pkgname=addr2line-rs
 _pkgname=addr2line
 pkgver=0.26.1
-pkgrel=1
+pkgrel=2
 pkgdesc="A cross-platform library for retrieving per-address debug information from files with DWARF debug informatio"
 arch=('x86_64')
 url="https://docs.rs/${_pkgname}"
@@ -28,6 +28,8 @@ build() {
 
   export CARGO_HOME="${srcdir}/cargo-home"
   export CARGO_TARGET_DIR=target
+  export RUSTFLAGS="-C prefer-dynamic"
+
   cargo build --frozen --release --features="bin"
   cargo build --frozen --release
 }
