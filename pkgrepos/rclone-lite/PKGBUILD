@@ -4,7 +4,7 @@
 
 pkgname=rclone-lite
 pkgver=1.73.3
-pkgrel=3
+pkgrel=5
 pkgdesc="rsync for cloud storage"
 arch=('x86_64')
 url="https://github.com/rclone/rclone"
@@ -36,6 +36,9 @@ build() {
   PATH="/build/go/bin:$PATH" make V=0 TAG=v$pkgver rclone
   ls -lh | grep rclone
   file rclone-x32 rclone
+  go install -v github.com/Zxilly/go-size-analyzer/cmd/gsa@latest
+  gopath=$(go env GOPATH)
+  $gopath/bin/gsa rclone
 
   PATH="/build/go/bin:$PATH" ./rclone genautocomplete bash rclone.bash_completion
   PATH="/build/go/bin:$PATH" ./rclone genautocomplete zsh rclone.zsh_completion
