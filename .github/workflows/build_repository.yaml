@@ -94,6 +94,7 @@ jobs:
           rclone-lite
           motrix-bin
           qrcode-rust
+          syncspirit-bin
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt

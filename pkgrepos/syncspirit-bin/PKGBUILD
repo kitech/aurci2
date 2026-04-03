@@ -1,0 +1,53 @@
+# Maintainer: Your Name <youremail@email.com>
+pkgname=syncspirit-bin
+_pkgname=syncspirit-fltk
+pkgver=0.4.4
+pkgrel=1
+pkgdesc="Description of the app"
+arch=('x86_64')
+url="https://appsite.com"
+license=('LicenseName')
+depends=('fuse2' 'desktop-file-utils') # fuse2 is often required
+source=("https://github.com/basiliscos/syncspirit/releases/download/v0.4.4/syncspirit-fltk-v${pkgver}-x86_64.AppImage"
+        "appname.desktop"
+        "appname.png")
+sha256sums=('59907d58416bd0a8c364ec582e8ebc144aa8eaa6ad49eea2f8cea57dec4e12d4' 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855') # Replace with actual sha256sum
+
+
+prepare() {
+  # Make the AppImage executable
+  chmod +x "${_pkgname}-v${pkgver}-x86_64.AppImage"
+
+  # Extract the AppImage
+  ./"${_pkgname}-v${pkgver}-x86_64.AppImage" --appimage-extract
+}
+
+package() {
+  # Create directory structure
+  install -d "${pkgdir}/opp/${_pkgname}"
+  install -d "${pkgdir}/usr/bin"
+
+  # Move extracted files to /opt
+  cp -a squashfs-root/* "${pkgdir}/opp/${_pkgname}/"
+
+  # ls ${pkgdir}/opp/${_pkgname}/usr/lib/lib*
+
+  rm -f ${pkgdir}/opp/${_pkgname}/usr/lib/libX*
+  rm -f ${pkgdir}/opp/${_pkgname}/usr/lib/libxcb*
+  rm -f ${pkgdir}/opp/${_pkgname}/usr/lib/libxkb*
+  rm -f ${pkgdir}/opp/${_pkgname}/usr/lib/libcrypto*
+  rm -f ${pkgdir}/opp/${_pkgname}/usr/lib/libssl*
+  rm -f ${pkgdir}/opp/${_pkgname}/usr/lib/libstdc*
+  rm -f ${pkgdir}/opp/${_pkgname}/usr/lib/libbrot*
+  rm -f ${pkgdir}/opp/${_pkgname}/usr/lib/libbz2*
+  rm -f ${pkgdir}/opp/${_pkgname}/usr/lib/libbsd*
+  # rm -f ${pkgdir}/opp/${_pkgname}/usr/lib/libfltk*
+  rm -rf ${pkgdir}/opp/${_pkgname}/usr/share/doc
+
+  # Create a symlink to the binary in /usr/bin
+  ln -sf "/opp/${_pkgname}/AppRun" "${pkgdir}/usr/bin/${_pkgname}"
+
+  # --- Optional: Handle Desktop Integration ---
+  # install -Dm644 "squashfs-root/${_pkgname}.desktop" "${pkgdir}/usr/share/applications/${_pkgname}.desktop"
+  # install -Dm644 "squashfs-root/${_pkgname}.png" "${pkgdir}/usr/share/pixmaps/${_pkgname}.png"
+}
