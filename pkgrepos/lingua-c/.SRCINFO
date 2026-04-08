@@ -1,0 +1,13 @@
+pkgbase = lingua-c
+	pkgdesc = An accurate natural language detection library, suitable for short text and mixed-language text
+	pkgver = 1.8.0
+	pkgrel = 1
+	url = https://docs.rs/lingua-c
+	arch = x86_64
+	license = Apache-2.0
+	makedepends = cargo
+	depends = glibc
+	source = https://github.com/Hkmu/react-native-/archive/refs/tags/v1.8.0.tar.gz
+	sha256sums = 472becfbac08a03433d9454affe3baf55d5a0ccec3900fd9cdeb5f0d4102ea03
+
+pkgname = lingua-c

@@ -1,0 +1,50 @@
+# Maintainer: Rafael Dominiquini <rafaeldominiquini at gmail dot com>
+# Maintainer: limforge
+
+pkgname=lingua-c
+_pkgname=lingua
+pkgver=1.8.0
+_pkgver=0.3.0
+pkgrel=1
+pkgdesc="An accurate natural language detection library, suitable for short text and mixed-language text"
+arch=('x86_64')
+url="https://docs.rs/${pkgname}"
+license=('Apache-2.0')
+makedepends=('cargo')
+depends=('glibc')
+source=("https://github.com/Hkmu/react-native-${_pkgname}/archive/refs/tags/v${_pkgver}.tar.gz")
+sha256sums=('472becfbac08a03433d9454affe3baf55d5a0ccec3900fd9cdeb5f0d4102ea03')
+
+prepare() {
+  cd "react-native-${_pkgname}-${_pkgver}/rust"
+
+  export CARGO_HOME="$srcdir/cargo-home"
+  # cargo fetch --locked
+  cargo fetch
+  # echo "[lib]" >> Cargo.toml
+  # echo "crate-type = [\"dylib\", \"rlib\"]" >> Cargo.toml
+}
+
+build() {
+  cd "react-native-${_pkgname}-${_pkgver}/rust"
+
+  export CARGO_HOME="${srcdir}/cargo-home"
+  export CARGO_TARGET_DIR=target
+  export RUSTFLAGS="-C prefer-dynamic"
+
+  # cargo build --frozen --release --features="bin"
+  cargo build --frozen --release
+}
+
+package() {
+  cd "react-native-${_pkgname}-${_pkgver}/rust"
+
+  # cargo install --frozen --root "${pkgdir}/usr" --path . --no-track
+
+  ls -lh target/release/
+  mkdir -p ${pkgdir}/usr/{bin,lib}
+  install -Dm755 target/release/liblingua_native.a "${pkgdir}/usr/lib/"
+  install -Dm755 target/release/liblingua_native.so "${pkgdir}/usr/lib/"
+  # install -Dm755 target/release/addr2line "${pkgdir}/usr/bin/${pkgname}"
+  # install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${_pkgname}/LICENSE"
+}

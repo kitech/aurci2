@@ -96,6 +96,7 @@ jobs:
           qrcode-rust
           syncspirit-bin
           freefilesync-bin
+          lingua-c
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
