@@ -5,7 +5,7 @@ pkgname=lingua-c
 _pkgname=lingua
 pkgver=1.8.0
 _pkgver=0.3.0
-pkgrel=1
+pkgrel=2
 pkgdesc="An accurate natural language detection library, suitable for short text and mixed-language text"
 arch=('x86_64')
 url="https://docs.rs/${pkgname}"
@@ -23,6 +23,10 @@ prepare() {
   cargo fetch
   # echo "[lib]" >> Cargo.toml
   # echo "crate-type = [\"dylib\", \"rlib\"]" >> Cargo.toml
+
+  echo "[profile.release]" >> Cargo.toml
+  # opt-level = "z" # or "s"
+  echo 'opt-level = "z" # or "s"' >> Cargo.toml
 }
 
 build() {
@@ -34,15 +38,22 @@ build() {
 
   # cargo build --frozen --release --features="bin"
   cargo build --frozen --release
+  cargo install lingua --features="accuracy-reports"
+  # which accuracy_reports
+  ls -lh ${CARGO_HOME}/bin/
 }
 
 package() {
   cd "react-native-${_pkgname}-${_pkgver}/rust"
 
+  export CARGO_HOME="${srcdir}/cargo-home"
   # cargo install --frozen --root "${pkgdir}/usr" --path . --no-track
 
   ls -lh target/release/
+  ls -lh ${CARGO_HOME}/bin/
+
   mkdir -p ${pkgdir}/usr/{bin,lib}
+  install -Dm755 ${CARGO_HOME}/bin/accuracy_reports "${pkgdir}/usr/bin/"
   install -Dm755 target/release/liblingua_native.a "${pkgdir}/usr/lib/"
   install -Dm755 target/release/liblingua_native.so "${pkgdir}/usr/lib/"
   # install -Dm755 target/release/addr2line "${pkgdir}/usr/bin/${pkgname}"
