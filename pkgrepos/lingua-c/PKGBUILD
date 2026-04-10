@@ -39,7 +39,7 @@ build() {
   # cargo build --frozen --release --features="bin"
   cargo build --frozen --release
   cargo install lingua --features="accuracy-reports"
-  # which accuracy_reports
+  which accuracy_reports || true
   ls -lh ${CARGO_HOME}/bin/
 }
 

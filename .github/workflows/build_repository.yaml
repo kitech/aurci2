@@ -97,6 +97,7 @@ jobs:
           syncspirit-bin
           freefilesync-bin
           lingua-c
+          littlesnitch-bin
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
