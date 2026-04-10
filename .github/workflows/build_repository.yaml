@@ -99,6 +99,8 @@ jobs:
           lingua-c
           littlesnitch-bin
           clang40
+          clang15
+          gcc49-multilib
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
