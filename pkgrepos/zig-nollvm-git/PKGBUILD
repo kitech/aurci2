@@ -2,11 +2,11 @@
 
 _llvm=21
 _basename="zig"
-_suffix="-master"
+_suffix="-nollvm-git"
 pkgname="${_basename}${_suffix}"
 pkgver=0.16.0dev.2596+469bf6af0
 pkgrel=1
-pkgdesc="General-purpose programming language and toolchain for maintaining robust, optimal, and reusable software"
+pkgdesc="General-purpose programming language and toolchain for maintaining robust, optimal, and reusable software. no llvm lite"
 arch=(
   # 'aarch64'     # 'aarch64'
   # 'armv7h'      # 'arm'
@@ -26,9 +26,9 @@ depends=(
   'libstdc++'
   'glibc'
 
-  "clang>=${_llvm}"
-  "lld>=${_llvm}"
-  "llvm-libs>=${_llvm}"
+  "clang21>=${_llvm}"
+  "lld21>=${_llvm}"
+  "llvm21-libs>=${_llvm}"
   # "clang${_llvm}"
   # "lld${_llvm}"
   # "llvm${_llvm}-libs"
@@ -38,8 +38,8 @@ makedepends=(
   'curl'
   'git'
   'jq'
-  
-  "llvm>=${_llvm}"
+
+  "llvm21>=${_llvm}"
   # "llvm${_llvm}"
 )
 # checkdepends=( # checkdepends_x86_64
@@ -75,7 +75,7 @@ prepare() {
     # -D ZIG_TARGET_TRIPLE:STRING='native-linux.6.6-gnu.2.42'
     -D ZIG_TARGET_MCPU:STRING='baseline'
   )
-  
+
   cd "${srcdir}/${_pkgsrc}"
   git -c advice.detachedHead=false checkout "${zig_commit}"
 

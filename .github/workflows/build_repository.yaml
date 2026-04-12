@@ -21,6 +21,9 @@ on:
 # lib32-qt3
 # libroxml
 # emacs-locale-zh-cn
+# clang40
+# clang15
+# gcc49-multilib
 
 # temp packages
 # lib32-gtk2
@@ -98,9 +101,7 @@ jobs:
           freefilesync-bin
           lingua-c
           littlesnitch-bin
-          clang40
-          clang15
-          gcc49-multilib
+          zig-nollvm-git
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
