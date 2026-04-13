@@ -96,6 +96,12 @@ pkgver() {
 
 build() {
   cd "${srcdir}"
+
+  # no llvm bootstrap
+  cc -o bootstrap bootstrap.c
+  ./bootstrap
+  ls -lh
+
   cmake --build "${_pkgsrc}/build"
 
   cd "${_pkgsrc}"
@@ -115,11 +121,15 @@ build() {
 # }
 
 package() {
+  cd "${srcdir}"
+  install -vDm755 zig2 "${pkgdir}/usr/bin/"
+
   cd "${srcdir}/${_pkgsrc}"
   install -vDm644 "README.md" "${pkgdir}/usr/share/doc/${pkgname}/README.md"
   install -vDm644 "LICENSE"   "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
 
   install -vd "${pkgdir}/opt/${pkgname}/lib" "${pkgdir}/usr/bin" "${pkgdir}/usr/lib"
+
 
   cd "fakeinstall/usr"
   cp -va --no-preserve=ownership "bin"          -T "${pkgdir}/opt/${pkgname}"
