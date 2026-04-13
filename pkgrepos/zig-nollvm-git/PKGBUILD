@@ -95,12 +95,17 @@ pkgver() {
 }
 
 build() {
-  cd "${srcdir}"
+  cd "${srcdir}/${_pkgsrc}"
 
+  pwd
+  ls -lh
+  find . -name bootstrap.c
   # no llvm bootstrap
   cc -o bootstrap bootstrap.c
   ./bootstrap
   ls -lh
+
+  cd "${srcdir}"
 
   cmake --build "${_pkgsrc}/build"
 
@@ -121,10 +126,9 @@ build() {
 # }
 
 package() {
-  cd "${srcdir}"
-  install -vDm755 zig2 "${pkgdir}/usr/bin/"
-
   cd "${srcdir}/${_pkgsrc}"
+
+  install -vDm755 zig2 "${pkgdir}/usr/bin/"
   install -vDm644 "README.md" "${pkgdir}/usr/share/doc/${pkgname}/README.md"
   install -vDm644 "LICENSE"   "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
 
