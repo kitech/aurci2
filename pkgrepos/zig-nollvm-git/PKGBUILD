@@ -128,6 +128,7 @@ build() {
 package() {
   cd "${srcdir}/${_pkgsrc}"
 
+  mkdir -pv "${pkgdir}/usr/bin/"
   install -vDm755 zig2 "${pkgdir}/usr/bin/"
   install -vDm644 "README.md" "${pkgdir}/usr/share/doc/${pkgname}/README.md"
   install -vDm644 "LICENSE"   "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"

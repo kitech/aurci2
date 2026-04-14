@@ -102,6 +102,7 @@ jobs:
           lingua-c
           littlesnitch-bin
           zig-nollvm-git
+          zeroclaw
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
