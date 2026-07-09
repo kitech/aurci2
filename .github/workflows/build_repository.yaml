@@ -104,6 +104,7 @@ jobs:
           zig-nollvm-git
           zeroclaw
           codebuff-bin
+          lib32-apulse
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
