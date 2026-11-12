@@ -105,6 +105,7 @@ jobs:
           zeroclaw
           codebuff-bin
           lib32-apulse
+          horcrux
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
