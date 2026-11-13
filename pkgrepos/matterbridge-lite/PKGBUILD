@@ -1,0 +1,64 @@
+# Based on Arch Linux extra/matterbridge (1.26.0-3)
+
+pkgname=matterbridge-lite
+pkgver=1.26.0
+pkgrel=1
+_pkgname=matterbridge
+_archive="$_pkgname-$pkgver"
+pkgdesc='Multi-protocols chat bridge (lite: telegram/matrix/discord/slack/xmpp/zulip/irc)'
+arch=('x86_64')
+url="https://github.com/42wim/$_pkgname"
+license=('Apache-2.0')
+depends=('glibc')
+makedepends=('go' 'git')
+provides=('matterbridge')
+conflicts=('matterbridge')
+backup=('etc/matterbridge.toml')
+
+# ==== 白名单 ====
+_bridges="telegram matrix discord slack xmpp zulip irc"
+# 上游全部协议（whatsappmulti 是正向标签，不传即关闭）
+_all_bridges="api discord gitter harmony irc keybase matrix mattermost msteams mumble nctalk rocketchat slack sshchat steam telegram vk whatsapp xmpp zulip"
+
+_drop_tags=""
+for _b in $_all_bridges; do
+  case " $_bridges " in
+    *" $_b "*) ;;
+    *) _drop_tags="$_drop_tags no$_b" ;;
+  esac
+done
+_drop_tags="${_drop_tags# }"
+# 结果：noapi nogitter noharmony nokeybase nomattermost nomsteams
+#       nomumble nonctalk norocketchat nosshchat nosteam novk nowhatsapp
+
+source=("$url/archive/v$pkgver/$_archive.tar.gz"
+        "$_archive.tar.gz.asc::$url/releases/download/v$pkgver/v$pkgver.tar.gz.asc"
+        "$_pkgname.service")
+sha256sums=('00e1bbfe3b32f2feccf9a7f13a6f12b1ce28a5eb04cc7b922b344e3493497425'
+            'SKIP'
+            '338171f409a0e55589b86959e37871d61d21dc89cec6b212b552eaf4e516e069')
+validpgpkeys=(CC7D978417C1AEA1E4CDD7240E41AB4BF4C610B4) # wim <wim@42.be>
+
+prepare() {
+  cd "$_archive"
+  go mod vendor
+}
+
+build() {
+  cd "$_archive"
+  export CGO_CPPFLAGS="$CPPFLAGS"
+  export CGO_CFLAGS="$CFLAGS"
+  export CGO_CXXFLAGS="$CXXFLAGS"
+  export CGO_LDFLAGS="$LDFLAGS"
+  export GOFLAGS="-buildmode=pie -trimpath -mod=readonly -modcacherw"
+  go build -tags "$_drop_tags" -v \
+    -ldflags "-s -w -linkmode=external" \
+    -o "$_pkgname" .
+}
+
+package() {
+  cd "$_archive"
+  install -Dm0755 -t "$pkgdir/usr/bin/" "$_pkgname"
+  install -Dm0644 -t "$pkgdir/usr/lib/systemd/system/" "../$_pkgname.service"
+  install -Dm0600 "$_pkgname.toml.sample" "$pkgdir/etc/$_pkgname.toml"
+}

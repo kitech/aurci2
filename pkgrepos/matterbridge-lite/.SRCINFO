@@ -1,0 +1,22 @@
+pkgbase = matterbridge-lite
+	pkgdesc = Multi-protocols chat bridge (lite: telegram/matrix/discord/slack/xmpp/zulip/irc)
+	pkgver = 1.26.0
+	pkgrel = 1
+	url = https://github.com/42wim/matterbridge
+	arch = x86_64
+	license = Apache-2.0
+	makedepends = go
+	makedepends = git
+	depends = glibc
+	provides = matterbridge
+	conflicts = matterbridge
+	backup = etc/matterbridge.toml
+	source = https://github.com/42wim/matterbridge/archive/v1.26.0/matterbridge-1.26.0.tar.gz
+	source = matterbridge-1.26.0.tar.gz.asc::https://github.com/42wim/matterbridge/releases/download/v1.26.0/v1.26.0.tar.gz.asc
+	source = matterbridge.service
+	validpgpkeys = CC7D978417C1AEA1E4CDD7240E41AB4BF4C610B4
+	sha256sums = 00e1bbfe3b32f2feccf9a7f13a6f12b1ce28a5eb04cc7b922b344e3493497425
+	sha256sums = SKIP
+	sha256sums = 338171f409a0e55589b86959e37871d61d21dc89cec6b212b552eaf4e516e069
+
+pkgname = matterbridge-lite

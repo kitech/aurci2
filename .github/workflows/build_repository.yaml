@@ -98,6 +98,7 @@ jobs:
           wxwidgets-gtk2
           geany-gtk2
           filezilla-gtk2
+          matterbridge-lite
           motrix-bin
           qrcode-rust
           syncspirit-bin
@@ -109,6 +110,7 @@ jobs:
           codebuff-bin
           lib32-apulse
           horcrux
+          zenoh-c
           heidisql-gtk2
           heidisql-gtk2-bin
 
