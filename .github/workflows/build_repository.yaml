@@ -95,6 +95,9 @@ jobs:
           ffmpeg7.1
           libcoap
           rclone-lite
+          wxwidgets-gtk2
+          geany-gtk2
+          filezilla-gtk2
           motrix-bin
           qrcode-rust
           syncspirit-bin

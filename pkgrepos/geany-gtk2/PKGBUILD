@@ -1,0 +1,50 @@
+# Maintainer: gzleo
+
+_pkgname=geany
+pkgname=geany-gtk2
+pkgver=1.37.1
+pkgrel=1
+pkgdesc='Fast and lightweight IDE (GTK2 build)'
+arch=('x86_64')
+url='https://www.geany.org/'
+license=('GPL')
+depends=('gtk2')
+makedepends=('doxygen' 'intltool' 'python-lxml')
+source=("https://download.geany.org/${_pkgname}-${pkgver}.tar.bz2")
+sha256sums=('18c5756444c1d8bcd737c8ecfd4ef0b3607c924fc02560d4e8b78f6121531a18')
+
+build() {
+  cd "${_pkgname}-${pkgver}"
+  export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/lib/geany-gtk2/lib"
+  ./configure --enable-gtk2 --enable-gtkdoc-header \
+    --prefix=/usr/lib/geany-gtk2
+  sed -i -e 's/ -shared / -Wl,-O1,--as-needed\0/g' libtool
+  make
+}
+
+package() {
+  cd "${_pkgname}-${pkgver}"
+  make DESTDIR="$pkgdir" install
+
+  mv "$pkgdir/usr/lib/geany-gtk2/bin/geany" \
+     "$pkgdir/usr/lib/geany-gtk2/bin/geany-gtk2"
+  install -dm755 "$pkgdir/usr/bin"
+  ln -s /usr/lib/geany-gtk2/bin/geany-gtk2 "$pkgdir/usr/bin/geany-gtk2"
+
+  install -Dm644 "$pkgdir/usr/lib/geany-gtk2/share/applications/geany.desktop" \
+    "$pkgdir/usr/share/applications/geany-gtk2.desktop"
+  sed -i -e 's/^Name=Geany$/Name=Geany (GTK2)/' \
+         -e 's/^Exec=geany/Exec=geany-gtk2/' \
+         -e 's/^Icon=geany$/Icon=geany-gtk2/' \
+         "$pkgdir/usr/share/applications/geany-gtk2.desktop"
+
+  for s in 16x16 24x24 32x32 48x48 scalable; do
+    for f in "$pkgdir/usr/lib/geany-gtk2/share/icons/hicolor/$s/apps/geany".*; do
+      [ -e "$f" ] || continue
+      install -Dm644 "$f" "$pkgdir/usr/share/icons/hicolor/$s/apps/geany-gtk2.${f##*.}"
+    done
+  done
+
+  install -Dm644 "$pkgdir/usr/lib/geany-gtk2/share/man/man1/geany.1" \
+    "$pkgdir/usr/share/man/man1/geany-gtk2.1"
+}

@@ -1,0 +1,15 @@
+pkgbase = geany-gtk2
+	pkgdesc = Fast and lightweight IDE (GTK2 build)
+	pkgver = 1.37.1
+	pkgrel = 1
+	url = https://www.geany.org/
+	arch = x86_64
+	license = GPL
+	makedepends = doxygen
+	makedepends = intltool
+	makedepends = python-lxml
+	depends = gtk2
+	source = https://download.geany.org/geany-1.37.1.tar.bz2
+	sha256sums = 18c5756444c1d8bcd737c8ecfd4ef0b3607c924fc02560d4e8b78f6121531a18
+
+pkgname = geany-gtk2

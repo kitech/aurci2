@@ -1,0 +1,18 @@
+pkgbase = sqlitebrowser-qt4
+	pkgdesc = Light GUI editor for SQLite databases, built on top of Qt4
+	pkgver = 3.9.1
+	pkgrel = 1
+	url = https://sqlitebrowser.org
+	arch = x86_64
+	license = GPL-3.0-or-later
+	makedepends = cmake
+	depends = glibc
+	depends = gcc-libs
+	depends = qt4
+	depends = sqlite
+	depends = hicolor-icon-theme
+	options = !lto
+	source = https://github.com/sqlitebrowser/sqlitebrowser/archive/refs/tags/v3.9.1.tar.gz
+	sha256sums = d0d2e06a69927ba1d0b955f3261ce70c61befc5bd5ddaa06752dae8bb4219ed8
+
+pkgname = sqlitebrowser-qt4

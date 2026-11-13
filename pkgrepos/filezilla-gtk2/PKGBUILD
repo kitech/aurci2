@@ -1,0 +1,62 @@
+# Maintainer: gzleo
+
+pkgname=filezilla-gtk2
+pkgver=3.71.1
+pkgrel=1
+pkgdesc='Fast and reliable FTP, FTPS and SFTP client (GTK2 build)'
+arch=('x86_64')
+url='https://filezilla-project.org'
+license=('GPL-3.0-or-later')
+depends=('dbus' 'fzssh' 'gtk2' 'hicolor-icon-theme' 'libfilezilla' 'sqlite' 'wxwidgets-gtk2' 'xdg-utils')
+makedepends=('boost' 'gnutls' 'libidn')
+source=("https://sources.archlinux.org/other/filezilla/filezilla-${pkgver}.tar.xz")
+sha256sums=('3df9b9b3e5b2c37dc6d9ecb883554aba140a02ec47c3d6b52333bf1733af4da4')
+
+prepare() {
+  cd "filezilla-${pkgver}"
+  autoreconf -vif
+}
+
+build() {
+  cd "filezilla-${pkgver}"
+  export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/lib/filezilla-gtk2/lib"
+  ./configure \
+    --prefix=/usr/lib/filezilla-gtk2 \
+    --disable-manualupdatecheck \
+    --disable-autoupdatecheck \
+    --with-pugixml=builtin \
+    --with-wx-config=/usr/bin/wx-config-gtk2
+  make
+}
+
+package() {
+  cd "filezilla-${pkgver}"
+  make DESTDIR="$pkgdir" install
+
+  mv "$pkgdir/usr/lib/filezilla-gtk2/bin/filezilla" \
+     "$pkgdir/usr/lib/filezilla-gtk2/bin/filezilla-gtk2"
+  install -dm755 "$pkgdir/usr/bin"
+  ln -s /usr/lib/filezilla-gtk2/bin/filezilla-gtk2 "$pkgdir/usr/bin/filezilla-gtk2"
+
+  install -Dm644 "$pkgdir/usr/lib/filezilla-gtk2/share/applications/filezilla.desktop" \
+    "$pkgdir/usr/share/applications/filezilla-gtk2.desktop"
+  sed -i -e 's/^Name=FileZilla$/Name=FileZilla (GTK2)/' \
+         -e 's/^Exec=filezilla/Exec=filezilla-gtk2/' \
+         -e 's/^Icon=filezilla$/Icon=filezilla-gtk2/' \
+         "$pkgdir/usr/share/applications/filezilla-gtk2.desktop"
+
+  for d in 16x16 32x32 48x48 480x480 scalable; do
+    for f in "$pkgdir/usr/lib/filezilla-gtk2/share/icons/hicolor/$d/apps/filezilla".*; do
+      [ -e "$f" ] || continue
+      install -Dm644 "$f" "$pkgdir/usr/share/icons/hicolor/$d/apps/filezilla-gtk2.${f##*.}"
+    done
+  done
+
+  install -Dm644 "$pkgdir/usr/lib/filezilla-gtk2/share/appdata/filezilla.appdata.xml" \
+    "$pkgdir/usr/share/metainfo/filezilla-gtk2.appdata.xml"
+  sed -i 's|<id>org.filezilla-project.FileZilla</id>|<id>org.filezilla-project.FileZilla.GTK2</id>|' \
+    "$pkgdir/usr/share/metainfo/filezilla-gtk2.appdata.xml"
+
+  install -Dm644 "$pkgdir/usr/lib/filezilla-gtk2/share/man/man1/filezilla.1" \
+    "$pkgdir/usr/share/man/man1/filezilla-gtk2.1"
+}
