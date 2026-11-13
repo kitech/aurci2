@@ -4,56 +4,88 @@
 
 pkgname=rclone-lite
 pkgver=1.73.3
-pkgrel=5
-pkgdesc="rsync for cloud storage"
+pkgrel=6
+pkgdesc="rsync for cloud storage (lite backends + librclone)"
 arch=('x86_64')
 url="https://github.com/rclone/rclone"
 license=('MIT')
 depends=('glibc')
 optdepends=('fuse3: for rclone mount')
-makedepends=('python' 'go' 'git' 'fuse3')
+makedepends=('go>=1.25' 'git')
 source=("git+https://github.com/rclone/rclone.git#tag=v${pkgver}?signed")
 sha512sums=('2ebdaf434ed96c1d78c322a472025931a88a7338fe50b87c65ba9c268a9be691206d032a2ba5a46f41c118cfdddeef79ad22e46c3375ccedb329eeacf9fd56bc')
 validpgpkeys=(E3B358DC858FB307F48170B9CB0DBEBC5F32C81D) # Nick Craig-Wood
 options=(!lto)
 
-build() {
-    cd rclone
+# 保留的后端；增删后需重新生成 .SRCINFO 并实测体积
+_backends="alias b2 chunker combine compress crypt ftp hasher http local memory s3 sftp smb union webdav"
 
-  export GOFLAGS="-buildmode=pie -trimpath"
-  export CGO_LDFLAGS="${LDFLAGS}"
-  export CGO_CFLAGS="${CFLAGS}"
-  export CGO_CPPFLAGS="${CPPFLAGS}"
-  PATH="/build/go/bin:$PATH" make V=0 TAG=v$pkgver rclone
-  cp ./rclone ./rclone.ori
-  ls -lh | grep rclone
-  for bkd in "qingstor azureblob azurefiles box dropbox seafile sia storj iclouddrive swift oracleobjectstorage"; do
-      rm -rf "backend/${bkd}"
-      sed -i 's/_ "github.com\/rclone\/rclone\/backend\/${bkd}"//' backend/all/all.go
-  done
-  GOARCH=386 CGO_ENABLED=1 PATH="/build/go/bin:$PATH" make V=0 TAG=v$pkgver rclone
-  cp ./rclone ./rclone-x32
-  PATH="/build/go/bin:$PATH" make V=0 TAG=v$pkgver rclone
-  ls -lh | grep rclone
-  file rclone-x32 rclone
-  go install -v github.com/Zxilly/go-size-analyzer/cmd/gsa@latest
-  gopath=$(go env GOPATH)
-  $gopath/bin/gsa rclone
-
-  PATH="/build/go/bin:$PATH" ./rclone genautocomplete bash rclone.bash_completion
-  PATH="/build/go/bin:$PATH" ./rclone genautocomplete zsh rclone.zsh_completion
-  PATH="/build/go/bin:$PATH" ./rclone genautocomplete fish rclone.fish_completion
+_rewrite_backends() {
+  local f=backend/all/all.go b
+  {
+    printf '// Package all imports all the backends\npackage all\n\nimport (\n'
+    for b in $_backends; do
+      [ -d "backend/$b" ] || { echo "rclone-lite: unknown backend '$b'" >&2; return 1; }
+      printf '\t_ "github.com/rclone/rclone/backend/%s"\n' "$b"
+    done
+    printf ')\n'
+  } > "$f"
 }
 
-#check() {
-#  cd rclone
-#  PATH="/build/go/bin:$PATH" make TAG=v$pkgver test
-#}
+build() {
+  cd rclone
+  export PATH="/build/go/bin:$PATH"
+  export GOFLAGS="-trimpath"
+  export CGO_CFLAGS="$CFLAGS"
+  export CGO_CPPFLAGS="$CPPFLAGS"
+  export CGO_LDFLAGS="$LDFLAGS"
+
+  _rewrite_backends
+
+  # 1) 命令行程序：PIE + 关闭自更新
+  go build -buildmode=pie -buildvcs=false -tags noselfupdate \
+    -ldflags "-s -w -X github.com/rclone/rclone/fs.Version=v$pkgver" \
+    -o rclone .
+
+  # 2) C 共享库：CGO 必须为 1；c-shared 与 pie 互斥，独立指定 buildmode
+  go build -buildmode=c-shared -buildvcs=false \
+    -ldflags "-s -w -X github.com/rclone/rclone/fs.Version=v$pkgver -extldflags '-Wl,-soname,librclone.so'" \
+    -o librclone.so ./librclone
+
+  ./rclone genautocomplete bash rclone.bash_completion
+  ./rclone genautocomplete zsh  rclone.zsh_completion
+  ./rclone genautocomplete fish rclone.fish_completion
+}
+
+check() {
+  cd rclone
+  readelf -d librclone.so | grep -q 'SONAME.*librclone\.so'
+  nm -D --defined-only librclone.so | grep -q ' T RcloneRPC'
+  gcc librclone/ctest/ctest.c -I. -L. -lrclone -o ctest
+  LD_LIBRARY_PATH=. ./ctest
+  ./rclone help backends
+}
 
 package() {
   cd rclone
 
   install -Dm755 rclone "$pkgdir"/usr/bin/rclone
+  install -Dm755 librclone.so "$pkgdir"/usr/lib/librclone.so
+  install -Dm644 librclone.h "$pkgdir"/usr/include/librclone.h
+
+  install -d "$pkgdir"/usr/lib/pkgconfig
+  cat > "$pkgdir"/usr/lib/pkgconfig/librclone.pc <<EOF
+prefix=/usr
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: librclone
+Description: rclone as a C shared library
+Version: $pkgver
+Libs: -L\${libdir} -lrclone
+Cflags: -I\${includedir}
+EOF
 
   install -Dm644 rclone.bash_completion "$pkgdir"/usr/share/bash-completion/completions/rclone
   install -Dm644 rclone.zsh_completion "$pkgdir"/usr/share/zsh/site-functions/_rclone

@@ -1,14 +1,12 @@
 pkgbase = rclone-lite
-	pkgdesc = rsync for cloud storage
+	pkgdesc = rsync for cloud storage (lite backends + librclone)
 	pkgver = 1.73.3
-	pkgrel = 1
+	pkgrel = 6
 	url = https://github.com/rclone/rclone
 	arch = x86_64
 	license = MIT
-	makedepends = python
-	makedepends = go
+	makedepends = go>=1.25
 	makedepends = git
-	makedepends = fuse3
 	depends = glibc
 	optdepends = fuse3: for rclone mount
 	options = !lto
