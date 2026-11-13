@@ -106,6 +106,8 @@ jobs:
           codebuff-bin
           lib32-apulse
           horcrux
+          heidisql-gtk2
+          heidisql-gtk2-bin
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
