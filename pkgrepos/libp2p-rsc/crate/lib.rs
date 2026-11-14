@@ -16,8 +16,11 @@ use std::time::Duration;
 
 use base64::Engine;
 use futures::StreamExt;
+use libp2p::core::transport::ListenerId;
 use libp2p::multiaddr::Protocol;
-use libp2p::swarm::{DialOpts, NetworkBehaviour, SwarmEvent};
+use libp2p::swarm::behaviour::toggle::Toggle;
+use libp2p::swarm::dial_opts::DialOpts;
+use libp2p::swarm::{NetworkBehaviour, SwarmEvent};
 use libp2p::{
     autonat, dcutr, gossipsub, identify, kad, mdns, noise, ping, relay, request_response, tcp,
     upnp, yamux, Multiaddr, PeerId, StreamProtocol, Swarm, SwarmBuilder,
@@ -75,7 +78,7 @@ fn ok_null() -> L2pResult {
 fn ok_str(s: &str) -> L2pResult {
     set_last_error(None);
     let len = s.len() + 1;
-    let data = Box::into_raw((s + "\0").into_boxed_str()) as *mut c_char as *mut c_void;
+    let data = Box::into_raw((format!("{s}\0")).into_boxed_str()) as *mut c_char as *mut c_void;
     L2pResult { code: LP2P_OK, errmsg: ptr::null_mut(), data, len }
 }
 
@@ -217,19 +220,20 @@ fn opt_bool(v: Option<bool>, default: bool) -> bool {
 // ---------------------------------------------------------------------------
 
 #[derive(NetworkBehaviour)]
-#[behaviour(prelude = "libp2p_swarm::derive_prelude")]
+#[derive(NetworkBehaviour)]
+#[behaviour(prelude = "libp2p::swarm::derive_prelude")]
 struct Behaviour {
-    identify: identify::Behaviour,
-    ping: ping::Behaviour,
-    gossipsub: gossipsub::Behaviour,
-    kad: kad::Behaviour,
-    request_response: request_response::Behaviour<request_response::cbor::codec::Codec<Vec<u8>, Vec<u8>>>,
-    mdns: mdns::tokio::Behaviour,
-    relay_client: relay::client::Behaviour,
-    relay_server: relay::Behaviour,
-    dcutr: dcutr::Behaviour,
-    autonat: autonat::v1::Behaviour,
-    upnp: upnp::tokio::Behaviour,
+    identify: Toggle<identify::Behaviour>,
+    ping: Toggle<ping::Behaviour>,
+    gossipsub: Toggle<gossipsub::Behaviour>,
+    kad: Toggle<kad::Behaviour<kad::store::MemoryStore>>,
+    request_response: Toggle<request_response::Behaviour<request_response::cbor::codec::Codec<Vec<u8>, Vec<u8>>>>,
+    mdns: Toggle<mdns::tokio::Behaviour>,
+    relay_client: Toggle<relay::client::Behaviour>,
+    relay_server: Toggle<relay::Behaviour>,
+    dcutr: Toggle<dcutr::Behaviour>,
+    autonat: Toggle<autonat::v1::Behaviour>,
+    upnp: Toggle<upnp::tokio::Behaviour>,
 }
 
 fn parse_addr(s: &str) -> Result<Multiaddr, String> {
@@ -303,19 +307,16 @@ fn build_swarm(
         None
     };
 
-    let relay_client = if opt_bool(cfg.enable_relay_client, false) {
-        Some(relay::client::Behaviour::new(local_peer_id, Default::default()))
-    } else {
-        None
-    };
-
     let behaviour = Behaviour {
-        identify: opt_bool(cfg.enable_identify, true)
-            .then(|| identify::Behaviour::new(identify_cfg)),
-        ping: opt_bool(cfg.enable_ping, true).then(|| ping::Behaviour::new(ping_cfg)),
-        gossipsub,
-        kad: opt_bool(cfg.enable_kad, true).then(|| {
-            let mut k = kad::Behaviour::new(
+        identify: Toggle::from(
+            opt_bool(cfg.enable_identify, true).then(|| identify::Behaviour::new(identify_cfg)),
+        ),
+        ping: Toggle::from(
+            opt_bool(cfg.enable_ping, true).then(|| ping::Behaviour::new(ping_cfg)),
+        ),
+        gossipsub: Toggle::from(gossipsub),
+        kad: Toggle::from(opt_bool(cfg.enable_kad, true).then(|| {
+            let mut k = kad::Behaviour::<kad::store::MemoryStore>::new(
                 local_peer_id,
                 kad::store::MemoryStore::new(local_peer_id),
             );
@@ -325,17 +326,21 @@ fn build_swarm(
                 Some(kad::Mode::Client)
             });
             k
-        }),
-        request_response,
-        mdns: mdns_b,
-        relay_client,
-        relay_server: opt_bool(cfg.enable_relay_server, false)
-            .then(|| relay::Behaviour::new(local_peer_id, relay::Config::default())),
-        dcutr: opt_bool(cfg.enable_dcutr, true).then(|| dcutr::Behaviour::new(local_peer_id)),
-        autonat: opt_bool(cfg.enable_autonat, true).then(|| {
+        })),
+        request_response: Toggle::from(request_response),
+        mdns: Toggle::from(mdns_b),
+        relay_client: Toggle::from(None),
+        relay_server: Toggle::from(
+            opt_bool(cfg.enable_relay_server, false)
+                .then(|| relay::Behaviour::new(local_peer_id, relay::Config::default())),
+        ),
+        dcutr: Toggle::from(
+            opt_bool(cfg.enable_dcutr, true).then(|| dcutr::Behaviour::new(local_peer_id)),
+        ),
+        autonat: Toggle::from(opt_bool(cfg.enable_autonat, true).then(|| {
             autonat::v1::Behaviour::new(local_peer_id, autonat::v1::Config::default())
-        }),
-        upnp: opt_bool(cfg.enable_upnp, true).then(upnp::tokio::Behaviour::default),
+        })),
+        upnp: Toggle::from(opt_bool(cfg.enable_upnp, true).then(upnp::tokio::Behaviour::default)),
     };
 
     let idle_secs = cfg.idle_connection_timeout_secs.unwrap_or(0);
@@ -357,85 +362,24 @@ fn build_swarm(
         .with_dns()
         .map_err(|e| format!("dns: {}", e))?;
 
-    if behaviour.relay_client.is_some() {
+    if opt_bool(cfg.enable_relay_client, false) {
         Ok(b.with_relay_client(noise::Config::new, yamux::Config::default)
             .map_err(|e| format!("relay client transport: {}", e))?
-            .with_behaviour(|_, relay| Behaviour { relay_client: Some(relay), ..behaviour })
+            .with_behaviour(|_, relay| Behaviour {
+                relay_client: Toggle::from(Some(relay)),
+                ..behaviour
+            })
             .map_err(|e| format!("behaviour: {}", e))?
             .with_swarm_config(|c| c.with_idle_connection_timeout(idle))
             .build())
     } else {
-        Ok(b.with_behaviour(|_| Behaviour { relay_client: None, ..behaviour })
+        Ok(b.with_behaviour(|_| behaviour)
             .map_err(|e| format!("behaviour: {}", e))?
             .with_swarm_config(|c| c.with_idle_connection_timeout(idle))
             .build())
     }
 }
 
-// ---------------------------------------------------------------------------
-// swarm task (event loop)
-// ---------------------------------------------------------------------------
-
-struct TaskState {
-    cmd_id_seed: u64,
-    pending: HashMap<u64, Pending>,
-    by_conn: HashMap<libp2p::swarm::ConnectionId, u64>,
-    by_query: HashMap<kad::QueryId, u64>,
-    by_req: HashMap<request_response::OutboundRequestId, u64>,
-    ping_waiters: HashMap<PeerId, u64>,
-    ident_waiters: HashMap<PeerId, u64>,
-    ident_cache: HashMap<PeerId, serde_json::Value>,
-    inbound: HashMap<u64, request_response::ResponseChannel<Vec<u8>>>,
-    inbound_seed: u64,
-    listeners: HashMap<String, libp2p::swarm::ListenerId>,
-}
-
-impl TaskState {
-    fn next(&mut self) -> u64 {
-        self.cmd_id_seed += 1;
-        self.cmd_id_seed
-    }
-
-    fn push_event(&self, ev_tx: &std::sync::mpsc::SyncSender<String>, value: serde_json::Value) {
-        if ev_tx.try_send(value.to_string()).is_err() {
-            let _ = ev_tx.try_send(json!({"type":"overflow"}).to_string());
-        }
-    }
-
-    /// Completes a pending command: oneshot first (if blocking), then the
-    /// command_result event (so a timed-out blocking call still gets it).
-    fn complete(&mut self, ev_tx: &std::sync::mpsc::SyncSender<String>, id: u64, outcome: Result<Outcome, String>) {
-        let payload = match &outcome {
-            Ok(Outcome::Str(s)) => json!({"data": s.clone()}),
-            Ok(Outcome::Bytes(b)) => json!({"data_base64": base64::engine::general_purpose::STANDARD.encode(b)}),
-            Err(_) => json!({}),
-        };
-        let ok = outcome.is_ok();
-        if let Some(p) = self.pending.remove(&id) {
-            if let Some(tx) = p.reply {
-                let _ = tx.send(outcome);
-            }
-        }
-        self.push_event(ev_tx, json!({"type":"command_result","command_id": id, "ok": ok}.merge(&payload)));
-    }
-}
-
-use serde_json::Value;
-
-trait MergeInPlace {
-    fn merge(self, other: &Value) -> Value;
-}
-impl MergeInPlace for Value {
-    fn merge(self, other: &Value) -> Value {
-        match (self, other) {
-            (Value::Object(mut a), Value::Object(b)) => {
-                for (k, v) in b { a.insert(k.clone(), v.clone()); }
-                Value::Object(a)
-            }
-            (a, _) => a,
-        }
-    }
-}
 
 // ---------------------------------------------------------------------------
 // swarm task (event loop)
@@ -444,7 +388,7 @@ impl MergeInPlace for Value {
 struct TaskState {
     pending: HashMap<u64, Pending>,
     by_conn: HashMap<libp2p::swarm::ConnectionId, u64>,
-    by_listener: HashMap<libp2p::swarm::ListenerId, u64>,
+    by_listener: HashMap<ListenerId, u64>,
     by_query: HashMap<kad::QueryId, u64>,
     by_req: HashMap<request_response::OutboundRequestId, u64>,
     ping_waiters: HashMap<PeerId, u64>,
@@ -453,7 +397,7 @@ struct TaskState {
     ident_cache: HashMap<PeerId, serde_json::Value>,
     inbound: HashMap<u64, request_response::ResponseChannel<Vec<u8>>>,
     inbound_seed: u64,
-    listeners: HashMap<String, libp2p::swarm::ListenerId>,
+    listeners: HashMap<String, ListenerId>,
 }
 
 impl TaskState {
@@ -733,7 +677,7 @@ fn handle_command(swarm: &mut Swarm<Behaviour>, cmd: Command, st: &mut TaskState
 
 fn on_event(
     swarm: &mut Swarm<Behaviour>,
-    ev: SwarmEvent<BehaviourEvent<Behaviour>>,
+    ev: SwarmEvent<BehaviourEvent>,
     st: &mut TaskState,
     ev_tx: &std::sync::mpsc::SyncSender<String>,
 ) {
@@ -817,7 +761,7 @@ fn on_event(
 }
 
 fn on_behaviour_event(
-    be: BehaviourEvent<Behaviour>,
+    be: BehaviourEvent,
     st: &mut TaskState,
     ev_tx: &std::sync::mpsc::SyncSender<String>,
 ) {

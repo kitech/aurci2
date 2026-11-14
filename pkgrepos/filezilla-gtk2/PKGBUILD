@@ -2,12 +2,13 @@
 
 pkgname=filezilla-gtk2
 pkgver=3.71.1
-pkgrel=2
+pkgrel=3
 pkgdesc='Fast and reliable FTP, FTPS and SFTP client (GTK2 build)'
 arch=('x86_64')
 url='https://filezilla-project.org'
 license=('GPL-3.0-or-later')
-depends=('dbus' 'fzssh' 'gtk2' 'hicolor-icon-theme' 'libfilezilla' 'sqlite' 'wxwidgets-gtk2' 'xdg-utils')
+depends=('dbus' 'fzssh' 'gtk2' 'hicolor-icon-theme' 'libfilezilla' 'sqlite'
+         'wxwidgets-gtk2' 'xdg-utils' 'libxkbcommon')
 makedepends=('boost' 'gnutls' 'libidn')
 _wxver=3.2.12
 source=("https://sources.archlinux.org/other/filezilla/filezilla-${pkgver}.tar.xz"

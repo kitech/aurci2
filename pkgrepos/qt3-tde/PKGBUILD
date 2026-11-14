@@ -4,7 +4,7 @@ pkgname=qt3-tde
 # epoch 2: AUR qt3 is epoch=1 (1:3.3.8b); TDE's continuation is 3.5.0
 epoch=2
 pkgver=3.5.0
-pkgrel=3
+pkgrel=4
 pkgdesc='Qt 3.5 continued by Trinity Desktop Project (inputmethod enabled)'
 arch=('x86_64')
 url='https://mirror.git.trinitydesktop.org/gitea/TDE/qt3'
@@ -94,11 +94,9 @@ package() {
   rm -rf "${pkgdir}"/usr/share/qt3/{phrasebooks,templates,translations}
 
   # trim mkspecs to the used one (keep linux-g++-64, drop the rest)
-  find "${pkgdir}"/usr/share/qt3/mkspecs -maxdepth 1 -type d \
-    ! -path "${pkgdir}"/usr/share/qt3/mkspecs \
-    ! -path "${pkgdir}"/usr/share/qt3/mkspecs/linux-g++-64 \
-    ! -path "${pkgdir}"/usr/share/qt3/mkspecs/linux-g++-64/* \
-    -exec rm -rf {} +
+  # 只保留 linux-g++-64，其余 mkspec 目录删掉
+  find "${pkgdir}/usr/share/qt3/mkspecs" -mindepth 1 -maxdepth 1 -type d \
+    ! -name 'linux-g++-64' -exec rm -rf {} +
 
   # man pages (suffixed -qt3.1)
   install -d -m755 "${pkgdir}"/usr/share/man

@@ -1,7 +1,7 @@
 [package]
 name = "l2p"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 description = "Rust-C API for the libp2p crate (P2P networking)"
 license = "MIT"
 rust-version = "1.88"
