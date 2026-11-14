@@ -1,7 +1,7 @@
 pkgbase = zig-nollvm-git
 	pkgdesc = General-purpose programming language and toolchain for maintaining robust, optimal, and reusable software. no llvm lite
 	pkgver = 0.16.0dev.2596+469bf6af0
-	pkgrel = 1
+	pkgrel = 2
 	url = https://ziglang.org
 	arch = x86_64
 	license = MIT
@@ -9,12 +9,13 @@ pkgbase = zig-nollvm-git
 	makedepends = curl
 	makedepends = git
 	makedepends = jq
-	makedepends = llvm21>=21
+	makedepends = llvm>=23
+	makedepends = clang>=23
 	depends = libstdc++
 	depends = glibc
-	depends = clang21>=21
-	depends = lld21>=21
-	depends = llvm21-libs>=21
+	depends = clang-libs>=23
+	depends = lld>=23
+	depends = llvm-libs>=23
 	options = !lto
 	options = !strip
 	source = zig::git+https://codeberg.org/ziglang/zig.git

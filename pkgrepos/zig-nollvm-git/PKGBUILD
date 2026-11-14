@@ -1,11 +1,11 @@
 # Maintainer:  Vitalii Kuzhdin <vitaliikuzhdin@gmail.com>
 
-_llvm=21
+_llvm=23
 _basename="zig"
 _suffix="-nollvm-git"
 pkgname="${_basename}${_suffix}"
 pkgver=0.16.0dev.2596+469bf6af0
-pkgrel=1
+pkgrel=2
 pkgdesc="General-purpose programming language and toolchain for maintaining robust, optimal, and reusable software. no llvm lite"
 arch=(
   # 'aarch64'     # 'aarch64'
@@ -26,12 +26,9 @@ depends=(
   'libstdc++'
   'glibc'
 
-  "clang21>=${_llvm}"
-  "lld21>=${_llvm}"
-  "llvm21-libs>=${_llvm}"
-  # "clang${_llvm}"
-  # "lld${_llvm}"
-  # "llvm${_llvm}-libs"
+  "clang-libs>=${_llvm}"
+  "lld>=${_llvm}"
+  "llvm-libs>=${_llvm}"
 )
 makedepends=(
   'cmake>=3.15'
@@ -39,8 +36,10 @@ makedepends=(
   'git'
   'jq'
 
-  "llvm21>=${_llvm}"
-  # "llvm${_llvm}"
+  "llvm>=${_llvm}"
+  "clang>=${_llvm}"
+  # 源码 CMake 里是 find_package(llvm 23)/find_package(clang 23)，
+  # 与 21 版本化的 llvm21/clang21 不匹配；容器实测 llvm/lld 23 已就位、仅缺 clang
 )
 # checkdepends=( # checkdepends_x86_64
 #   'lib32-glibc'

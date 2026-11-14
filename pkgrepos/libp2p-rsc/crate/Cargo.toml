@@ -9,6 +9,7 @@ rust-version = "1.88"
 [lib]
 name = "p2p_rsc"
 crate-type = ["cdylib", "staticlib"]
+path = "lib.rs"
 
 [dependencies]
 libp2p = { version = "0.58", features = [

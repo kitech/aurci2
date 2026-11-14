@@ -2,7 +2,7 @@
 
 pkgname=libp2p-rsc
 pkgver=0.1.0
-pkgrel=1
+pkgrel=2
 pkgdesc='Event-driven C API for the Rust libp2p crate (libp2p-rsc)'
 arch=('x86_64')
 url='https://github.com/libp2p/rust-libp2p'

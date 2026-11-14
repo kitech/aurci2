@@ -8,6 +8,7 @@ license = "MIT OR Apache-2.0"
 [lib]
 name = "rwdav"
 crate-type = ["cdylib", "staticlib"]
+path = "lib.rs"
 
 [dependencies]
 reqwest_dav = "0.3"

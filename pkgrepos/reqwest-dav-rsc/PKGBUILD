@@ -2,7 +2,7 @@
 
 pkgname=reqwest-dav-rsc
 pkgver=0.1.0
-pkgrel=1
+pkgrel=2
 pkgdesc='Synchronous C API for the Rust reqwest_dav WebDAV client (librwdav)'
 arch=('x86_64')
 url='https://github.com/niuhuan/reqwest_dav'
