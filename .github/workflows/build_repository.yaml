@@ -113,6 +113,9 @@ jobs:
           codebuff-bin
           lib32-apulse
           horcrux
+          vlang-bin
+          vlang-git
+          vox-git
           zenoh-c
           heidisql-gtk2
           heidisql-gtk2-bin
