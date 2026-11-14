@@ -116,6 +116,7 @@ jobs:
           zenoh-c
           heidisql-gtk2
           heidisql-gtk2-bin
+          nectarlink-bin
 
     - name: List generated Files
       run: ls -1 > ${{ github.workspace }}/files.txt
