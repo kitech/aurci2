@@ -1,0 +1,33 @@
+pkgbase = qt3-tde
+	pkgdesc = Qt 3.5 continued by Trinity Desktop Project (inputmethod enabled)
+	pkgver = 3.5.0
+	pkgrel = 1
+	epoch = 2
+	url = https://mirror.git.trinitydesktop.org/gitea/TDE/qt3
+	arch = x86_64
+	license = GPL
+	license = QPL
+	makedepends = git
+	makedepends = mesa
+	depends = libpng
+	depends = libxmu
+	depends = libxcursor
+	depends = libxinerama
+	depends = glu
+	depends = libxft
+	depends = libxrandr
+	depends = libmng
+	depends = libunistring
+	depends = libnsl
+	depends = libtirpc
+	depends = libxi
+	depends = sqlite
+	depends = unixodbc
+	depends = libcups
+	provides = qt3
+	conflicts = qt3
+	options = !docs
+	source = git+https://mirror.git.trinitydesktop.org/gitea/TDE/qt3#commit=e99bbda7347d35833da0876bc745d5e0b6c18c2b
+	sha256sums = SKIP
+
+pkgname = qt3-tde

@@ -1,0 +1,6 @@
+src/
+pkg/
+qt3/
+*.pkg.tar.zst
+*.pkg.tar.zst.sig
+.SRCINFO.orig

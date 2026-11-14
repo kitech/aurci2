@@ -1,0 +1,107 @@
+# Qt3 continued by TDE, inputmethod enabled; layout follows AUR qt3
+
+pkgname=qt3-tde
+# epoch 2: AUR qt3 is epoch=1 (1:3.3.8b); TDE's continuation is 3.5.0
+epoch=2
+pkgver=3.5.0
+pkgrel=1
+pkgdesc='Qt 3.5 continued by Trinity Desktop Project (inputmethod enabled)'
+arch=('x86_64')
+url='https://mirror.git.trinitydesktop.org/gitea/TDE/qt3'
+license=('GPL' 'QPL')
+depends=('libpng' 'libxmu' 'libxcursor' 'libxinerama' 'glu' 'libxft'
+         'libxrandr' 'libmng' 'libunistring' 'libnsl' 'libtirpc' 'libxi'
+         'sqlite' 'unixodbc' 'libcups')
+makedepends=('git' 'mesa')
+conflicts=('qt3')
+provides=('qt3')
+options=('!docs')
+source=("git+https://mirror.git.trinitydesktop.org/gitea/TDE/qt3#commit=e99bbda7347d35833da0876bc745d5e0b6c18c2b")
+sha256sums=('SKIP')
+
+prepare() {
+  cd "$srcdir/qt3"
+
+  # immodule needs the private header symlinks (script ships in-tree)
+  sh ./make-symlinks.sh
+
+  # use system defaults for X11 / OpenGL paths
+  sed -i "s,QMAKE_LIBDIR_X11.*,QMAKE_LIBDIR_X11\t=," mkspecs/*/qmake.conf
+  sed -i "s,QMAKE_INCDIR_X11.*,QMAKE_INCDIR_X11\t=," mkspecs/*/qmake.conf
+  sed -i "s,QMAKE_INCDIR_OPENGL.*,QMAKE_INCDIR_OPENGL\t=," mkspecs/*/qmake.conf
+  sed -i "s,QMAKE_LIBDIR_OPENGL.*,QMAKE_LIBDIR_OPENGL\t=," mkspecs/*/qmake.conf
+
+  # don't use rpath
+  sed -i "s|-Wl,-rpath,| |" mkspecs/*/qmake.conf
+
+  # inject our CXXFLAGS instead of hardcoded -O2
+  sed -i "s|-O2|$CXXFLAGS -fno-strict-aliasing|" mkspecs/linux-g++{,-32,-64}/qmake.conf
+  sed -i "s|-I. |$CXXFLAGS -I. |" qmake/Makefile.unix
+
+  # skip the license prompt
+  sed -i "s|read acceptance|acceptance=yes|" configure
+}
+
+build() {
+  cd "$srcdir/qt3"
+
+  export QTDIR="$srcdir/qt3"
+  export PATH="${QTDIR}/bin:${PATH}"
+  export LD_LIBRARY_PATH="${QTDIR}/lib:${LD_LIBRARY_PATH}"
+  export QMAKESPEC="${QTDIR}/mkspecs/linux-g++-64"
+
+  ./configure \
+    -prefix /usr \
+    -bindir /usr/lib/qt3/bin \
+    -headerdir /usr/include/qt3 \
+    -plugindir /usr/lib/qt3/plugins \
+    -datadir /usr/share/qt3 \
+    -translationdir /usr/share/qt3/translations \
+    -I/usr/include/tirpc \
+    -platform linux-g++-64 \
+    -enable-styles -enable-tools -enable-kernel -enable-widgets \
+    -enable-dialogs -enable-iconview -enable-workspace \
+    -enable-network -enable-canvas -enable-table -enable-xml -enable-opengl \
+    -qt-gif -qt-style-motif \
+    -release -largefile -shared -sm -nis -thread -stl -cups \
+    -xinerama -xrender -xkb -ipv6 -dlopen-opengl -xft -tablet \
+    -system-zlib -system-libpng -system-libmng -system-libjpeg \
+    -no-exceptions -no-g++-exceptions \
+    -inputmethod -inputmethod-ext \
+    -plugin-sql-sqlite3 -plugin-sql-odbc
+
+  make
+}
+
+package() {
+  cd "$srcdir/qt3"
+
+  make INSTALL_ROOT="${pkgdir}" install
+
+  # remove build paths from .prl files
+  sed -i -e "s|-L${srcdir}/qt3/lib ||g" -e "s|${srcdir}||g" \
+    "${pkgdir}"/usr/lib/*.prl
+
+  # drop dirs AUR also drops
+  rm -rf "${pkgdir}"/usr/share/qt3/{phrasebooks,templates,translations}
+
+  # trim mkspecs to the used one (keep linux-g++-64, drop the rest)
+  find "${pkgdir}"/usr/share/qt3/mkspecs -maxdepth 1 -type d \
+    ! -path "${pkgdir}"/usr/share/qt3/mkspecs \
+    ! -path "${pkgdir}"/usr/share/qt3/mkspecs/linux-g++-64 \
+    ! -path "${pkgdir}"/usr/share/qt3/mkspecs/linux-g++-64/* \
+    -exec rm -rf {} +
+
+  # man pages (suffixed -qt3.1)
+  install -d -m755 "${pkgdir}"/usr/share/man
+  cp -r "${srcdir}"/qt3/doc/man/{man1,man3} "${pkgdir}"/usr/share/man/
+  for i in "${pkgdir}"/usr/share/man/man1/*; do
+    mv "$i" "${i%.*}-qt3.1"
+  done
+
+  # -qt3 symlinks for cmake/configure scripts
+  install -d "${pkgdir}"/usr/bin
+  for b in "${pkgdir}"/usr/lib/qt3/bin/*; do
+    ln -s "/usr/lib/qt3/bin/$(basename "$b")" "${pkgdir}/usr/bin/$(basename "$b")-qt3"
+  done
+}

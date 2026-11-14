@@ -100,6 +100,7 @@ jobs:
           filezilla-gtk2
           reqwest-dav-rsc
           libp2p-rsc
+          qt3-tde
           matterbridge-lite
           motrix-bin
           qrcode-rust
