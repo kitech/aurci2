@@ -98,6 +98,8 @@ jobs:
           wxwidgets-gtk2
           geany-gtk2
           filezilla-gtk2
+          reqwest-dav-rsc
+          libp2p-rsc
           matterbridge-lite
           motrix-bin
           qrcode-rust

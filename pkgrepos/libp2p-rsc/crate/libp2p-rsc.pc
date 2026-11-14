@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libp2p-rsc
+Description: C API for the Rust crate libp2p (P2P networking)
+URL: https://github.com/libp2p/rust-libp2p
+Version: 0.1.0
+Libs: -L${libdir} -lp2p-rsc
+Libs.private: -lpthread -lm -ldl
+Cflags: -I${includedir}

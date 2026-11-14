@@ -1,0 +1,19 @@
+[package]
+name = "rwdav"
+version = "0.1.0"
+edition = "2021"
+description = "Synchronous C API for the Rust crate reqwest_dav (WebDAV client)"
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "rwdav"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+reqwest_dav = "0.3"
+tokio = { version = "1", features = ["rt-multi-thread"] }
+serde_json = "1.0"
+
+[profile.release]
+lto = "thin"
+strip = "symbols"

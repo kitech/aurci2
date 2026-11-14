@@ -1,0 +1,8 @@
+src/
+target/
+cargo-home/
+*.pkg.tar.zst
+*.pkg.tar.zst.sig
+*.tar.gz
+pkg/
+.SRCINFO.orig

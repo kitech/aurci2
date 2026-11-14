@@ -1,0 +1,27 @@
+# C API for the Rust crate libp2p (P2P networking, libp2p-rsc)
+
+pkgname=libp2p-rsc
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Event-driven C API for the Rust libp2p crate (libp2p-rsc)'
+arch=('x86_64')
+url='https://github.com/libp2p/rust-libp2p'
+license=('MIT')
+depends=('glibc' 'gcc-libs')
+makedepends=('rust' 'cargo')
+source=()
+sha256sums=()
+
+build() {
+  cd "$startdir"
+  export CARGO_HOME="$srcdir/cargo-home"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  cargo build --release --manifest-path crate/Cargo.toml
+}
+
+package() {
+  install -Dm0755 "$srcdir/target/release/libp2p_rsc.so" "$pkgdir/usr/lib/libp2p-rsc.so"
+  install -Dm0644 "$srcdir/target/release/libp2p_rsc.a" "$pkgdir/usr/lib/libp2p-rsc.a"
+  install -Dm0644 "$startdir/crate/libp2p-rsc.h" "$pkgdir/usr/include/libp2p-rsc.h"
+  install -Dm0644 "$startdir/crate/libp2p-rsc.pc" "$pkgdir/usr/lib/pkgconfig/libp2p-rsc.pc"
+}

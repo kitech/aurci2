@@ -1,0 +1,29 @@
+[package]
+name = "l2p"
+version = "0.1.0"
+edition = "2024"
+description = "Rust-C API for the libp2p crate (P2P networking)"
+license = "MIT"
+rust-version = "1.88"
+
+[lib]
+name = "p2p_rsc"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+libp2p = { version = "0.58", features = [
+    "tcp", "dns", "quic", "yamux", "noise", "ed25519",
+    "ping", "identify", "gossipsub", "request-response", "cbor",
+    "kad", "mdns", "relay", "dcutr", "autonat", "upnp",
+    "tokio", "macros",
+] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync"] }
+futures = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
+base64 = "0.22"
+hex = "0.4"
+
+[profile.release]
+lto = "thin"
+strip = "symbols"

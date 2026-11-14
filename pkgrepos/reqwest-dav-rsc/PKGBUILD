@@ -1,0 +1,27 @@
+# C API for the Rust crate reqwest_dav (WebDAV client)
+
+pkgname=reqwest-dav-rsc
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Synchronous C API for the Rust reqwest_dav WebDAV client (librwdav)'
+arch=('x86_64')
+url='https://github.com/niuhuan/reqwest_dav'
+license=('MIT' 'Apache-2.0')
+depends=('glibc' 'gcc-libs' 'openssl')
+makedepends=('rust' 'cargo')
+source=()
+sha256sums=()
+
+build() {
+  cd "$startdir"
+  export CARGO_HOME="$srcdir/cargo-home"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  cargo build --release --manifest-path crate/Cargo.toml
+}
+
+package() {
+  install -Dm0755 "$srcdir/target/release/librwdav.so" "$pkgdir/usr/lib/librwdav.so"
+  install -Dm0644 "$srcdir/target/release/librwdav.a" "$pkgdir/usr/lib/librwdav.a"
+  install -Dm0644 "$startdir/crate/rwdav.h" "$pkgdir/usr/include/rwdav.h"
+  install -Dm0644 "$startdir/crate/rwdav.pc" "$pkgdir/usr/lib/pkgconfig/rwdav.pc"
+}

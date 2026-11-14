@@ -1,0 +1,10 @@
+*
+!.gitignore
+!PKGBUILD
+!detail.md
+!.SRCINFO
+!crate/
+!crate/Cargo.toml
+!crate/lib.rs
+!crate/rwdav.h
+!crate/rwdav.pc

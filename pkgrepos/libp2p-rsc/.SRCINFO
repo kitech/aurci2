@@ -1,0 +1,13 @@
+pkgbase = libp2p-rsc
+	pkgdesc = Event-driven C API for the Rust libp2p crate (libp2p-rsc)
+	pkgver = 0.1.0
+	pkgrel = 1
+	url = https://github.com/libp2p/rust-libp2p
+	arch = x86_64
+	license = MIT
+	makedepends = rust
+	makedepends = cargo
+	depends = glibc
+	depends = gcc-libs
+
+pkgname = libp2p-rsc

@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: rwdav
+Description: Synchronous C API for the Rust crate reqwest_dav (WebDAV client)
+URL: https://github.com/niuhuan/reqwest_dav
+Version: 0.1.0
+Libs: -lrwdav
+Libs.private: -lssl -lcrypto -ldl -lpthread -lm
+Cflags: -I${includedir}
