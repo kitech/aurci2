@@ -8,7 +8,7 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::ptr;
 use std::sync::LazyLock;
 
-use reqwest_dav::{Auth, Client, ClientBuilder, Depth};
+use reqwest_dav::{Auth, Client, ClientBuilder, Dav2xx, Depth};
 
 pub const RWDAV_OK: i64 = 0;
 pub const RWDAV_ERR: i64 = -1;
@@ -390,8 +390,13 @@ pub extern "C" fn rwdav_cp(
             Ok(v) => v,
             Err(r) => return r,
         };
-        match RT.block_on(client.client.cp(&from, &to, overwrite != 0)) {
-            Ok(()) => ok_empty(),
+        // reqwest_dav 0.3.x: cp() 固定覆盖；cp_raw() 才暴露 overwrite
+        let res = RT.block_on(async {
+            let resp = client.client.cp_raw(&from, &to, overwrite != 0).await?;
+            resp.dav2xx().await
+        });
+        match res {
+            Ok(_) => ok_empty(),
             Err(e) => fail(
                 RWDAV_ERR,
                 format!("rwdav_cp('{}', '{}'): {}", from, to, e),
