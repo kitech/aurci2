@@ -5,7 +5,7 @@ pkgname=lingua-c
 _pkgname=lingua
 pkgver=1.8.0
 _pkgver=0.3.0
-pkgrel=2
+pkgrel=3
 pkgdesc="An accurate natural language detection library, suitable for short text and mixed-language text"
 arch=('x86_64')
 url="https://docs.rs/${pkgname}"
@@ -37,10 +37,10 @@ build() {
   export RUSTFLAGS="-C prefer-dynamic"
 
   # cargo build --frozen --release --features="bin"
+  # 只构建库。不再 cargo install accuracy_reports：lingua 1.8.0 随包发布的
+  # Cargo.lock 钉住 ethnum 1.5.0，其 error.rs 的 mem::transmute(()) 在新版
+  # rustc 下是硬错误（E0512），而 install 无法覆盖包内 lock。
   cargo build --frozen --release
-  cargo install lingua --features="accuracy-reports"
-  which accuracy_reports || true
-  ls -lh ${CARGO_HOME}/bin/
 }
 
 package() {
@@ -53,7 +53,6 @@ package() {
   ls -lh ${CARGO_HOME}/bin/
 
   mkdir -p ${pkgdir}/usr/{bin,lib}
-  install -Dm755 ${CARGO_HOME}/bin/accuracy_reports "${pkgdir}/usr/bin/"
   install -Dm755 target/release/liblingua_native.a "${pkgdir}/usr/lib/"
   install -Dm755 target/release/liblingua_native.so "${pkgdir}/usr/lib/"
   # install -Dm755 target/release/addr2line "${pkgdir}/usr/bin/${pkgname}"

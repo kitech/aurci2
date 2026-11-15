@@ -291,14 +291,15 @@ fn build_swarm(
 
     let rr_codec = request_response::cbor::codec::Codec::<Vec<u8>, Vec<u8>>::default();
     let request_response = if opt_bool(cfg.enable_request_response, false) {
+        let rr_proto = StreamProtocol::try_from_owned(
+            cfg.request_response_protocol
+                .clone()
+                .unwrap_or_else(|| "/l2p/req/1".to_string()),
+        )
+        .map_err(|e| format!("invalid request-response protocol: {}", e))?;
         Some(request_response::Behaviour::with_codec(
             rr_codec,
-            std::iter::once((
-                StreamProtocol::new(
-                    cfg.request_response_protocol.as_deref().unwrap_or("/l2p/req/1"),
-                ),
-                request_response::ProtocolSupport::Full,
-            )),
+            std::iter::once((rr_proto, request_response::ProtocolSupport::Full)),
             request_response::Config::default(),
         ))
     } else {
@@ -422,6 +423,7 @@ impl TaskState {
         match &outcome {
             Ok(Outcome::Str(s)) => { payload.insert("data".into(), Value::String(s.clone())); }
             Ok(Outcome::Bytes(b)) => { payload.insert("data_base64".into(), Value::String(base64::engine::general_purpose::STANDARD.encode(b))); }
+            Ok(Outcome::Null) => {}
             Err(_) => {}
         }
         if let Some(p) = self.pending.remove(&id) {
@@ -592,7 +594,7 @@ fn handle_command(swarm: &mut Swarm<Behaviour>, cmd: Command, st: &mut TaskState
                         None => { drop(ch); reply_now(st, ev_tx, pending, Ok(Outcome::Null)); } // decline
                         Some(d) => match swarm.behaviour_mut().request_response.as_mut()
                             .ok_or_else(|| "request-response disabled".to_string())
-                            .and_then(|rr| rr.send_response(ch, d).map_err(|e| e.to_string()))
+                            .and_then(|rr| rr.send_response(ch, d).map_err(|_| "send_response failed".to_string()))
                         {
                             Ok(()) => reply_now(st, ev_tx, pending, Ok(Outcome::Null)),
                             Err(e) => reply_now(st, ev_tx, pending, Err(format!("l2p_response({}): {}", channel, e))),

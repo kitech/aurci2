@@ -2,7 +2,7 @@
 
 pkgname=vox-git
 pkgver=0.1.3
-pkgrel=1
+pkgrel=2
 pkgdesc='Browser engine written in V (JavaScriptCore + V UI2)'
 arch=('x86_64')
 url='https://vox-browser.org'
@@ -17,10 +17,15 @@ conflicts=('vox')
 # 上游 CI 固定的 V 编译器；UI2 无 tag，只能钉 commit
 _vcommit=f7f3add7af3c4615ba5dbedc06e18f76ef604346
 _uicommit=a9fb7e043e41e8133f642942da43e4f74d2ea592
+# V 引导编译器快照（vlang/vc）。vc master 每天随 V master 重建，今天的快照会
+# 把旧源码改写成 string.split_next / trim_space_eq —— f7f3add 的 vlib 里还
+# 没有这两个函数，引导必失败。钉住同日快照（内嵌 V 714e1602，2026-11-09）。
+_vccommit=f28b01336a3e54d888e5711f1f25a31e164ba9c0
 source=("vox::git+https://github.com/vox-browser/vox.git"
         "v::git+https://github.com/vlang/v.git#commit=${_vcommit}"
-        "ui2::git+https://github.com/vlang/ui2.git#commit=${_uicommit}")
-sha256sums=('SKIP' 'SKIP' 'SKIP')
+        "ui2::git+https://github.com/vlang/ui2.git#commit=${_uicommit}"
+        "vc::git+https://github.com/vlang/vc.git#commit=${_vccommit}")
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 pkgver() {
   cd vox
@@ -34,7 +39,12 @@ prepare() {
 
 build() {
   # 上游 pin 的 V 编译器（v.mod 要求其 FastC/JSON 特性）
-  make -C v -j"$(nproc)" VFLAGS='-memory-limit 10G'
+  # 用钉住的 vc 快照替换 make 自动从 :master 克隆的引导源码；去掉 .git 后
+  # GNUmakefile 的 latest_vc 会走 "Using local vc" 分支，不会 pull 到 master
+  rm -rf v/vc
+  cp -a "$srcdir/vc" v/vc
+  rm -rf v/vc/.git
+  make -C v -j"$(nproc)" VC="$PWD/v/vc" VFLAGS='-memory-limit 10G'
 
   cd vox
   export V_BIN="$srcdir/v/v"
