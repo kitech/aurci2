@@ -17,6 +17,7 @@ use std::time::Duration;
 use base64::Engine;
 use futures::StreamExt;
 use libp2p::core::transport::ListenerId;
+use libp2p::core::ConnectedPoint;
 use libp2p::multiaddr::Protocol;
 use libp2p::swarm::behaviour::toggle::Toggle;
 use libp2p::swarm::dial_opts::DialOpts;
@@ -27,6 +28,7 @@ use libp2p::{
 };
 use serde::Deserialize;
 use serde_json::json;
+use serde_json::Value;
 use tokio::sync::{mpsc, oneshot};
 
 pub const LP2P_OK: i64 = 0;
@@ -220,7 +222,6 @@ fn opt_bool(v: Option<bool>, default: bool) -> bool {
 // ---------------------------------------------------------------------------
 
 #[derive(NetworkBehaviour)]
-#[derive(NetworkBehaviour)]
 #[behaviour(prelude = "libp2p::swarm::derive_prelude")]
 struct Behaviour {
     identify: Toggle<identify::Behaviour>,
@@ -268,10 +269,13 @@ fn build_swarm(
         identify_cfg = identify_cfg.with_agent_version(agent.clone());
     }
 
-    let mut gossipsub_cfg = gossipsub::Config::default();
-    if let Some(ms) = cfg.gossipsub_heartbeat_ms {
-        gossipsub_cfg.heartbeat_interval = Duration::from_millis(ms);
-    }
+    let gossipsub_cfg = match cfg.gossipsub_heartbeat_ms {
+        Some(ms) => gossipsub::ConfigBuilder::default()
+            .heartbeat_interval(Duration::from_millis(ms))
+            .build()
+            .map_err(|e| format!("gossipsub config: {}", e))?,
+        None => gossipsub::Config::default(),
+    };
 
     let gossipsub = if opt_bool(cfg.enable_gossipsub, true) {
         Some(
@@ -289,8 +293,11 @@ fn build_swarm(
     let request_response = if opt_bool(cfg.enable_request_response, false) {
         Some(request_response::Behaviour::with_codec(
             rr_codec,
-            std::iter::once(StreamProtocol::new(
-                cfg.request_response_protocol.as_deref().unwrap_or("/l2p/req/1"),
+            std::iter::once((
+                StreamProtocol::new(
+                    cfg.request_response_protocol.as_deref().unwrap_or("/l2p/req/1"),
+                ),
+                request_response::ProtocolSupport::Full,
             )),
             request_response::Config::default(),
         ))
@@ -468,7 +475,7 @@ fn info_json(info: &identify::Info) -> serde_json::Value {
     json!({
         "protocol_version": info.protocol_version,
         "agent_version": info.agent_version,
-        "public_key_hex": hex::encode(info.public_key.to_protobuf_encoding()),
+        "public_key_hex": hex::encode(info.public_key.encode_protobuf()),
         "listen_addrs": info.listen_addrs.iter().map(|a| a.to_string()).collect::<Vec<_>>(),
         "protocols": info.protocols.iter().map(|p| p.to_string()).collect::<Vec<_>>(),
         "observed_addr": info.observed_addr.to_string(),
@@ -549,27 +556,27 @@ fn handle_command(swarm: &mut Swarm<Behaviour>, cmd: Command, st: &mut TaskState
         }
         Command::GossipsubSubscribe { topic, pending } => {
             let t = gossipsub::IdentTopic::new(&topic);
-            match swarm.behaviour_mut().gossipsub.as_mut().ok_or("gossipsub disabled").and_then(|g| g.subscribe(&t).map_err(|e| e.to_string())) {
+            match swarm.behaviour_mut().gossipsub.as_mut().ok_or_else(|| "gossipsub disabled".to_string()).and_then(|g| g.subscribe(&t).map_err(|e| e.to_string())) {
                 Ok(_) => reply_now(st, ev_tx, pending, Ok(Outcome::Null)),
                 Err(e) => reply_now(st, ev_tx, pending, Err(format!("l2p_gossipsub_subscribe('{}'): {}", topic, e))),
             }
         }
         Command::GossipsubUnsubscribe { topic, pending } => {
             let t = gossipsub::IdentTopic::new(&topic);
-            match swarm.behaviour_mut().gossipsub.as_mut().ok_or("gossipsub disabled").and_then(|g| g.unsubscribe(&t).map_err(|e| e.to_string())) {
+            match swarm.behaviour_mut().gossipsub.as_mut().ok_or_else(|| "gossipsub disabled".to_string()).map(|g| g.unsubscribe(&t)) {
                 Ok(_) => reply_now(st, ev_tx, pending, Ok(Outcome::Null)),
                 Err(e) => reply_now(st, ev_tx, pending, Err(format!("l2p_gossipsub_unsubscribe('{}'): {}", topic, e))),
             }
         }
         Command::GossipsubPublish { topic, data, pending } => {
             let t = gossipsub::IdentTopic::new(&topic);
-            match swarm.behaviour_mut().gossipsub.as_mut().ok_or("gossipsub disabled").and_then(|g| g.publish(t, data).map_err(|e| e.to_string())) {
+            match swarm.behaviour_mut().gossipsub.as_mut().ok_or_else(|| "gossipsub disabled".to_string()).and_then(|g| g.publish(t, data).map_err(|e| e.to_string())) {
                 Ok(_) => reply_now(st, ev_tx, pending, Ok(Outcome::Null)),
                 Err(e) => reply_now(st, ev_tx, pending, Err(format!("l2p_gossipsub_publish('{}'): {}", topic, e))),
             }
         }
         Command::Request { peer, data, pending } => {
-            match swarm.behaviour_mut().request_response.as_mut().ok_or("request-response disabled").map(|rr| rr.send_request(&peer, data)) {
+            match swarm.behaviour_mut().request_response.as_mut().ok_or_else(|| "request-response disabled".to_string()).map(|rr| rr.send_request(&peer, data)) {
                 Ok(req_id) => {
                     st.by_req.insert(req_id, pending.id);
                     st.pending.insert(pending.id, pending);
@@ -583,7 +590,10 @@ fn handle_command(swarm: &mut Swarm<Behaviour>, cmd: Command, st: &mut TaskState
                 Some(ch) => {
                     match data {
                         None => { drop(ch); reply_now(st, ev_tx, pending, Ok(Outcome::Null)); } // decline
-                        Some(d) => match ch.send_response(d) {
+                        Some(d) => match swarm.behaviour_mut().request_response.as_mut()
+                            .ok_or_else(|| "request-response disabled".to_string())
+                            .and_then(|rr| rr.send_response(ch, d).map_err(|e| e.to_string()))
+                        {
                             Ok(()) => reply_now(st, ev_tx, pending, Ok(Outcome::Null)),
                             Err(e) => reply_now(st, ev_tx, pending, Err(format!("l2p_response({}): {}", channel, e))),
                         },
@@ -593,7 +603,7 @@ fn handle_command(swarm: &mut Swarm<Behaviour>, cmd: Command, st: &mut TaskState
         }
         Command::KadAddAddress { peer, addr, pending } => {
             match parse_addr(&addr) {
-                Ok(a) => match swarm.behaviour_mut().kad.as_mut().ok_or("kad disabled").map(|k| k.add_address(&peer, a)) {
+                Ok(a) => match swarm.behaviour_mut().kad.as_mut().ok_or_else(|| "kad disabled".to_string()).map(|k| k.add_address(&peer, a)) {
                     Ok(_) => reply_now(st, ev_tx, pending, Ok(Outcome::Null)),
                     Err(e) => reply_now(st, ev_tx, pending, Err(format!("l2p_kad_add_address: {}", e))),
                 },
@@ -601,44 +611,45 @@ fn handle_command(swarm: &mut Swarm<Behaviour>, cmd: Command, st: &mut TaskState
             }
         }
         Command::KadBootstrap { pending } => {
-            match swarm.behaviour_mut().kad.as_mut().ok_or("kad disabled").and_then(|k| k.bootstrap().map_err(|e| e.to_string())) {
+            match swarm.behaviour_mut().kad.as_mut().ok_or_else(|| "kad disabled".to_string()).and_then(|k| k.bootstrap().map_err(|e| e.to_string())) {
                 Ok(query_id) => { st.by_query.insert(query_id, pending.id); st.pending.insert(pending.id, pending); }
                 Err(e) => reply_now(st, ev_tx, pending, Err(format!("l2p_kad_bootstrap: {}", e))),
             }
         }
         Command::KadGetRecord { key, pending } => {
-            match swarm.behaviour_mut().kad.as_mut().ok_or("kad disabled").map(|k| k.get_record(kad::RecordKey::new(&key))) {
+            match swarm.behaviour_mut().kad.as_mut().ok_or_else(|| "kad disabled".to_string()).map(|k| k.get_record(kad::RecordKey::new(&key))) {
                 Ok(query_id) => { st.by_query.insert(query_id, pending.id); st.pending.insert(pending.id, pending); }
                 Err(e) => reply_now(st, ev_tx, pending, Err(format!("l2p_kad_get_record: {}", e))),
             }
         }
         Command::KadPutRecord { key, value, pending } => {
-            match swarm.behaviour_mut().kad.as_mut().ok_or("kad disabled").map(|k| k.put_record(kad::Record::new(kad::RecordKey::new(&key), value))) {
+            match swarm.behaviour_mut().kad.as_mut().ok_or_else(|| "kad disabled".to_string())
+                .and_then(|k| k.put_record(kad::Record::new(kad::RecordKey::new(&key), value), kad::Quorum::One).map_err(|e| e.to_string())) {
                 Ok(query_id) => { st.by_query.insert(query_id, pending.id); st.pending.insert(pending.id, pending); }
                 Err(e) => reply_now(st, ev_tx, pending, Err(format!("l2p_kad_put_record: {}", e))),
             }
         }
         Command::KadClosest { peer, pending } => {
-            match swarm.behaviour_mut().kad.as_mut().ok_or("kad disabled").map(|k| k.get_closest_peers(peer)) {
+            match swarm.behaviour_mut().kad.as_mut().ok_or_else(|| "kad disabled".to_string()).map(|k| k.get_closest_peers(peer)) {
                 Ok(query_id) => { st.by_query.insert(query_id, pending.id); st.pending.insert(pending.id, pending); }
                 Err(e) => reply_now(st, ev_tx, pending, Err(format!("l2p_kad_get_closest_peers: {}", e))),
             }
         }
         Command::KadProvide { key, pending } => {
-            match swarm.behaviour_mut().kad.as_mut().ok_or("kad disabled").and_then(|k| k.start_providing(kad::RecordKey::new(&key)).map_err(|e| e.to_string())) {
+            match swarm.behaviour_mut().kad.as_mut().ok_or_else(|| "kad disabled".to_string()).and_then(|k| k.start_providing(kad::RecordKey::new(&key)).map_err(|e| e.to_string())) {
                 Ok(query_id) => { st.by_query.insert(query_id, pending.id); st.pending.insert(pending.id, pending); }
                 Err(e) => reply_now(st, ev_tx, pending, Err(format!("l2p_kad_start_providing: {}", e))),
             }
         }
         Command::KadUnprovide { key, pending } => {
-            swarm.behaviour_mut().kad.as_mut().ok_or("kad disabled").map(|k| k.stop_providing(kad::RecordKey::new(&key)))
+            swarm.behaviour_mut().kad.as_mut().ok_or_else(|| "kad disabled".to_string()).map(|k| k.stop_providing(&kad::RecordKey::new(&key)))
                 .map_err(|e| e.to_string())
                 .map(|_| reply_now(st, ev_tx, pending, Ok(Outcome::Null)))
                 .unwrap_or_else(|e| reply_now(st, ev_tx, pending, Err(format!("l2p_kad_stop_providing: {}", e))));
         }
         Command::KadSetMode { mode, pending } => {
             let m = match mode.as_str() { "server" => kad::Mode::Server, "client" => kad::Mode::Client, _ => { reply_now(st, ev_tx, pending, Err(format!("l2p_kad_set_mode('{}'): invalid mode", mode))); return; } };
-            swarm.behaviour_mut().kad.as_mut().ok_or("kad disabled").map(|k| k.set_mode(Some(m)))
+            swarm.behaviour_mut().kad.as_mut().ok_or_else(|| "kad disabled".to_string()).map(|k| k.set_mode(Some(m)))
                 .map_err(|e| e.to_string())
                 .map(|_| reply_now(st, ev_tx, pending, Ok(Outcome::Null)))
                 .unwrap_or_else(|e| reply_now(st, ev_tx, pending, Err(format!("l2p_kad_set_mode: {}", e))));
@@ -686,30 +697,34 @@ fn on_event(
             if let Some(id) = st.by_listener.remove(&listener_id) {
                 st.complete(ev_tx, id, Ok(Outcome::Str(address.to_string())));
             }
-            st.push_event(ev_tx, json!({"type":"new_listen_addr","address": address.to_string(),"listener_id": listener_id}));
+            st.push_event(ev_tx, json!({"type":"new_listen_addr","address": address.to_string(),"listener_id": format!("{:?}", listener_id)}));
         }
         SwarmEvent::ExpiredListenAddr { listener_id, address, .. } => {
             if let Some(id) = st.by_listener.remove(&listener_id) {
                 st.complete(ev_tx, id, Err(format!("l2p_listen: expired: {}", address)));
             }
-            st.push_event(ev_tx, json!({"type":"expired_listen_addr","address": address.to_string(),"listener_id": listener_id}));
+            st.push_event(ev_tx, json!({"type":"expired_listen_addr","address": address.to_string(),"listener_id": format!("{:?}", listener_id)}));
         }
         SwarmEvent::ListenerError { listener_id, error, .. } => {
             if let Some(id) = st.by_listener.remove(&listener_id) {
                 st.complete(ev_tx, id, Err(format!("l2p_listen: {}", error)));
             }
-            st.push_event(ev_tx, json!({"type":"listener_error","error": error.to_string(),"listener_id": listener_id}));
+            st.push_event(ev_tx, json!({"type":"listener_error","error": error.to_string(),"listener_id": format!("{:?}", listener_id)}));
         }
         SwarmEvent::ListenerClosed { listener_id, reason, .. } => {
-            st.push_event(ev_tx, json!({"type":"listener_closed","listener_id": listener_id,"reason": reason.map(|e| e.to_string()).unwrap_or_default()}));
+            st.push_event(ev_tx, json!({"type":"listener_closed","listener_id": format!("{:?}", listener_id),"reason": reason.map(|_| "closed".to_string()).unwrap_or_default()}));
         }
         SwarmEvent::ConnectionEstablished { peer_id, connection_id, endpoint, num_established, .. } => {
             if let Some(id) = st.by_conn.remove(&connection_id) {
                 st.complete(ev_tx, id, Ok(Outcome::Null));
             }
+            let local_addr = match &endpoint {
+                ConnectedPoint::Listener { local_addr, .. } => local_addr.to_string(),
+                _ => String::new(),
+            };
             st.push_event(ev_tx, json!({
                 "type":"connection_established","peer_id": peer_id.to_string(),
-                "endpoint": { "dialer": endpoint.get_remote_address().to_string(), "listener": endpoint.get_local_address().map(|a| a.to_string()).unwrap_or_default() },
+                "endpoint": { "dialer": endpoint.get_remote_address().to_string(), "listener": local_addr },
                 "num_established": num_established,
             }));
         }
@@ -726,7 +741,7 @@ fn on_event(
             st.push_event(ev_tx, json!({"type":"incoming_connection","local_addr": local_addr.to_string(),"send_back_addr": send_back_addr.to_string()}));
         }
         SwarmEvent::IncomingConnectionError { local_addr, send_back_addr, error, .. } => {
-            st.push_event(ev_tx, json!({"type":"incoming_connection_error","local_addr": local_addr.map(|a| a.to_string()).unwrap_or_default(),"send_back_addr": send_back_addr.map(|a| a.to_string()).unwrap_or_default(),"error": error.to_string()}));
+            st.push_event(ev_tx, json!({"type":"incoming_connection_error","local_addr": local_addr.to_string(),"send_back_addr": send_back_addr.to_string(),"error": error.to_string()}));
         }
         SwarmEvent::OutgoingConnectionError { connection_id, peer_id, error, .. } => {
             if let Some(id) = st.by_conn.remove(&connection_id) {
@@ -766,8 +781,9 @@ fn on_behaviour_event(
     ev_tx: &std::sync::mpsc::SyncSender<String>,
 ) {
     match be {
-        BehaviourEvent::Ping(ping::Event::Ping { peer_id, result, .. }) => {
-            let (ok, rtt_ms) = match result {
+        BehaviourEvent::Ping(ev) => {
+            let peer_id = ev.peer;
+            let (ok, rtt_ms) = match ev.result {
                 Ok(d) => (true, Some(d.as_secs_f64() * 1000.0)),
                 Err(e) => (false, None),
             };
@@ -785,9 +801,8 @@ fn on_behaviour_event(
             else { ev.insert("error".into(), json!("ping failed")); }
             st.push_event(ev_tx, Value::Object(ev));
         }
-        BehaviourEvent::Identify(identify::Event::Received { peer_id, info, rtt, .. }) => {
+        BehaviourEvent::Identify(identify::Event::Received { peer_id, info, .. }) => {
             let mut v = info_json(&info);
-            if let Some(d) = rtt { v["rtt_ms"] = json!(d.as_secs_f64() * 1000.0); }
             st.ident_cache.insert(peer_id, v.clone());
             if let Some(id) = st.ident_waiters.remove(&peer_id) {
                 st.complete(ev_tx, id, Ok(Outcome::Str(v.to_string())));
@@ -824,48 +839,62 @@ fn on_behaviour_event(
             st.push_event(ev_tx, json!({"type":"gossipsub_other","debug": format!("{:?}", other)}));
         }
         BehaviourEvent::Kad(kad::Event::OutboundQueryProgressed { id, result, .. }) => {
+            let pid = st.by_query.remove(&id);
             match result {
-                kad::QueryResult::Bootstrap(Ok(_)) => st.complete(ev_tx, id, Ok(Outcome::Null)),
+                kad::QueryResult::Bootstrap(Ok(_)) => {
+                    if let Some(pid) = pid { st.complete(ev_tx, pid, Ok(Outcome::Null)); }
+                }
                 kad::QueryResult::GetRecord(Ok(kad::GetRecordOk::FoundRecord(record))) => {
-                    st.complete(ev_tx, id, Ok(Outcome::Bytes(record.record.value)));
                     st.push_event(ev_tx, json!({
                         "type":"kad_record","key_hex": hex::encode(record.record.key.as_ref()),
                         "data_base64": base64::engine::general_purpose::STANDARD.encode(&record.record.value),
                     }));
+                    if let Some(pid) = pid { st.complete(ev_tx, pid, Ok(Outcome::Bytes(record.record.value))); }
                 }
-                kad::QueryResult::GetRecord(Ok(kad::GetRecordOk::FinishedWithNoAdditionalRecord { .. })) => {}
+                kad::QueryResult::GetRecord(Ok(kad::GetRecordOk::FinishedWithNoAdditionalRecord { .. })) => {
+                    if let Some(pid) = pid { st.complete(ev_tx, pid, Ok(Outcome::Null)); }
+                }
                 kad::QueryResult::GetRecord(Err(e)) => {
-                    st.complete(ev_tx, id, Err(format!("l2p_kad_get_record: {}", e)));
+                    if let Some(pid) = pid { st.complete(ev_tx, pid, Err(format!("l2p_kad_get_record: {}", e))); }
                 }
-                kad::QueryResult::PutRecord(Ok(_)) => st.complete(ev_tx, id, Ok(Outcome::Null)),
-                kad::QueryResult::PutRecord(Err(e)) => st.complete(ev_tx, id, Err(format!("l2p_kad_put_record: {}", e))),
+                kad::QueryResult::PutRecord(Ok(_)) => {
+                    if let Some(pid) = pid { st.complete(ev_tx, pid, Ok(Outcome::Null)); }
+                }
+                kad::QueryResult::PutRecord(Err(e)) => {
+                    if let Some(pid) = pid { st.complete(ev_tx, pid, Err(format!("l2p_kad_put_record: {}", e))); }
+                }
                 kad::QueryResult::GetClosestPeers(Ok(peers)) => {
-                    let list: Vec<String> = peers.iter().map(|p| p.to_string()).collect();
-                    st.complete(ev_tx, id, Ok(Outcome::Str(Value::Array(list.into_iter().map(Value::String)).to_string())));
+                    let list: Vec<String> = peers.peers.iter().map(|p| p.peer_id.to_string()).collect();
+                    if let Some(pid) = pid {
+                        let arr = Value::Array(list.into_iter().map(Value::String).collect());
+                        st.complete(ev_tx, pid, Ok(Outcome::Str(arr.to_string())));
+                    }
                 }
                 kad::QueryResult::GetClosestPeers(Err(e)) => {
-                    st.complete(ev_tx, id, Err(format!("l2p_kad_get_closest_peers: {}", e)));
+                    if let Some(pid) = pid { st.complete(ev_tx, pid, Err(format!("l2p_kad_get_closest_peers: {}", e))); }
                 }
-                kad::QueryResult::StartProviding(Ok(_)) => st.complete(ev_tx, id, Ok(Outcome::Null)),
+                kad::QueryResult::StartProviding(Ok(_)) => {
+                    if let Some(pid) = pid { st.complete(ev_tx, pid, Ok(Outcome::Null)); }
+                }
                 kad::QueryResult::StartProviding(Err(e)) => {
-                    st.complete(ev_tx, id, Err(format!("l2p_kad_start_providing: {}", e)));
+                    if let Some(pid) = pid { st.complete(ev_tx, pid, Err(format!("l2p_kad_start_providing: {}", e))); }
                 }
                 other => {
-                    st.complete(ev_tx, id, Ok(Outcome::Null));
+                    if let Some(pid) = pid { st.complete(ev_tx, pid, Ok(Outcome::Null)); }
                     st.push_event(ev_tx, json!({"type":"kad_query_progressed","debug": format!("{:?}", other)}));
                 }
             }
         }
-        BehaviourEvent::Kad(kad::Event::RoutingUpdated { peer_id, addresses, .. }) => {
+        BehaviourEvent::Kad(kad::Event::RoutingUpdated { peer, addresses, .. }) => {
             st.push_event(ev_tx, json!({
-                "type":"kad_routing_updated","peer_id": peer_id.to_string(),
+                "type":"kad_routing_updated","peer_id": peer.to_string(),
                 "addresses": addresses.iter().map(|a| a.to_string()).collect::<Vec<_>>(),
             }));
         }
         BehaviourEvent::Kad(other) => {
             st.push_event(ev_tx, json!({"type":"kad_other","debug": format!("{:?}", other)}));
         }
-        BehaviourEvent::RequestResponse(request_response::Event::Message { peer_id, message, .. }) => {
+        BehaviourEvent::RequestResponse(request_response::Event::Message { peer, message, .. }) => {
             match message {
                 request_response::Message::Request { request_id, request, channel } => {
                     st.inbound_seed += 1;
@@ -873,7 +902,7 @@ fn on_behaviour_event(
                     st.inbound.insert(channel_id, channel);
                     st.push_event(ev_tx, json!({
                         "type":"request_response_inbound",
-                        "peer_id": peer_id.to_string(),
+                        "peer_id": peer.to_string(),
                         "channel_id": channel_id,
                         "data_base64": base64::engine::general_purpose::STANDARD.encode(&request),
                     }));
@@ -893,32 +922,17 @@ fn on_behaviour_event(
                 "peers": peers.into_iter().map(|(p, a)| json!({"peer_id": p.to_string(),"addr": a.to_string()})).collect::<Vec<_>>(),
             }));
         }
-        BehaviourEvent::Mdns(mdns::Event::Expired(peer_id)) => {
-            st.push_event(ev_tx, json!({"type":"mdns_expired","peer_id": peer_id.to_string()}));
+        BehaviourEvent::Mdns(mdns::Event::Expired(peers)) => {
+            st.push_event(ev_tx, json!({
+                "type":"mdns_expired",
+                "peers": peers.into_iter().map(|(p, a)| json!({"peer_id": p.to_string(),"addr": a.to_string()})).collect::<Vec<_>>(),
+            }));
         }
         BehaviourEvent::RelayClient(relay::client::Event::ReservationReqAccepted { relay_peer_id, .. }) => {
             if let Some(id) = st.relay_waiters.remove(&relay_peer_id) {
                 st.complete(ev_tx, id, Ok(Outcome::Null));
             }
             st.push_event(ev_tx, json!({"type":"relay_reservation_accepted","relay_peer_id": relay_peer_id.to_string()}));
-        }
-        BehaviourEvent::RelayClient(relay::client::Event::ReservationReqFailed { relay_peer_id, error, .. }) => {
-            if let Some(id) = st.relay_waiters.remove(&relay_peer_id) {
-                st.complete(ev_tx, id, Err(format!("l2p_relay_reserve('{}'): {:?}", relay_peer_id, error)));
-            }
-            st.push_event(ev_tx, json!({"type":"relay_reservation_failed","relay_peer_id": relay_peer_id.map(|p| p.to_string()).unwrap_or_default()}));
-        }
-        BehaviourEvent::RelayClient(relay::client::Event::ReservationReqDenied { relay_peer_id }) => {
-            if let Some(id) = st.relay_waiters.remove(&relay_peer_id) {
-                st.complete(ev_tx, id, Err(format!("l2p_relay_reserve('{}'): denied by relay", relay_peer_id)));
-            }
-            st.push_event(ev_tx, json!({"type":"relay_reservation_denied","relay_peer_id": relay_peer_id.to_string()}));
-        }
-        BehaviourEvent::RelayClient(relay::client::Event::ReservationTimedOut { relay_peer_id }) => {
-            if let Some(id) = st.relay_waiters.remove(&relay_peer_id) {
-                st.complete(ev_tx, id, Err(format!("l2p_relay_reserve('{}'): reservation timed out", relay_peer_id)));
-            }
-            st.push_event(ev_tx, json!({"type":"relay_reservation_timed_out","relay_peer_id": relay_peer_id.to_string()}));
         }
         BehaviourEvent::Upnp(upnp::Event::NewExternalAddr { .. }) => {
             st.push_event(ev_tx, json!({"type":"upnp_new_external_addr"}));

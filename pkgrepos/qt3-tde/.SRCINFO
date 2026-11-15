@@ -1,8 +1,7 @@
 pkgbase = qt3-tde
 	pkgdesc = Qt 3.5 continued by Trinity Desktop Project (inputmethod enabled)
 	pkgver = 3.5.0
-	pkgrel = 4
-	epoch = 2
+	pkgrel = 5
 	url = https://mirror.git.trinitydesktop.org/gitea/TDE/qt3
 	arch = x86_64
 	license = GPL
