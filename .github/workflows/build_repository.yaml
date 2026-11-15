@@ -79,6 +79,7 @@ jobs:
           hexchat
           bin32-filezilla-bin
           tccx-git
+          tccx-snap
           lib32-libmng
           lib32-unixodbc
           gtkspell

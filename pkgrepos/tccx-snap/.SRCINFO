@@ -1,0 +1,19 @@
+pkgbase = tccx-snap
+	pkgdesc = Tiny C Compiler, cross compile support
+	pkgver = 0.9.28rc
+	pkgrel = 1
+	url = https://bellard.org/tcc/
+	arch = x86_64
+	arch = i686
+	license = LGPL2.1
+	makedepends = texi2html
+	makedepends = git
+	provides = tcc
+	conflicts = tcc
+	conflicts = tccx-git
+	options = staticlibs
+	options = !lto
+	source = git+https://repo.or.cz/tinycc.git#commit=e23dabed154a8495f3ac1ff3cc9d04fa1c207893
+	md5sums = SKIP
+
+pkgname = tccx-snap
