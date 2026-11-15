@@ -133,6 +133,8 @@ jobs:
         name: aurci build ${{ github.run_number }} from ${{ steps.date.outputs.date }}
         body: aurci build ${{ github.run_number }} from ${{ steps.date.outputs.date }}
         files: |
-          ${{ github.workspace }}/*
+          ${{ github.workspace }}/aurci2.db
+          ${{ github.workspace }}/aurci2.files
+          ${{ github.workspace }}/files.txt
         draft: false
         prerelease: false
