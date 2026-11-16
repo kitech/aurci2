@@ -644,17 +644,25 @@ fn handle_command(swarm: &mut Swarm<Behaviour>, cmd: Command, st: &mut TaskState
             }
         }
         Command::KadUnprovide { key, pending } => {
-            swarm.behaviour_mut().kad.as_mut().ok_or_else(|| "kad disabled".to_string()).map(|k| k.stop_providing(&kad::RecordKey::new(&key)))
-                .map_err(|e| e.to_string())
-                .map(|_| reply_now(st, ev_tx, pending, Ok(Outcome::Null)))
-                .unwrap_or_else(|e| reply_now(st, ev_tx, pending, Err(format!("l2p_kad_stop_providing: {}", e))));
+            match swarm.behaviour_mut().kad.as_mut() {
+                Some(k) => {
+                    k.stop_providing(&kad::RecordKey::new(&key));
+                    reply_now(st, ev_tx, pending, Ok(Outcome::Null));
+                }
+                None => reply_now(st, ev_tx, pending,
+                    Err("l2p_kad_stop_providing: kad disabled".to_string())),
+            }
         }
         Command::KadSetMode { mode, pending } => {
             let m = match mode.as_str() { "server" => kad::Mode::Server, "client" => kad::Mode::Client, _ => { reply_now(st, ev_tx, pending, Err(format!("l2p_kad_set_mode('{}'): invalid mode", mode))); return; } };
-            swarm.behaviour_mut().kad.as_mut().ok_or_else(|| "kad disabled".to_string()).map(|k| k.set_mode(Some(m)))
-                .map_err(|e| e.to_string())
-                .map(|_| reply_now(st, ev_tx, pending, Ok(Outcome::Null)))
-                .unwrap_or_else(|e| reply_now(st, ev_tx, pending, Err(format!("l2p_kad_set_mode: {}", e))));
+            match swarm.behaviour_mut().kad.as_mut() {
+                Some(k) => {
+                    k.set_mode(Some(m));
+                    reply_now(st, ev_tx, pending, Ok(Outcome::Null));
+                }
+                None => reply_now(st, ev_tx, pending,
+                    Err("l2p_kad_set_mode: kad disabled".to_string())),
+            }
         }
         Command::RelayReserve { relay_peer, pending } => {
             // dial the relay's circuit address; reservation completes via

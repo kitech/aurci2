@@ -1,7 +1,7 @@
 pkgbase = lingua-c
 	pkgdesc = An accurate natural language detection library, suitable for short text and mixed-language text
 	pkgver = 1.8.0
-	pkgrel = 3
+	pkgrel = 4
 	url = https://docs.rs/lingua-c
 	arch = x86_64
 	license = Apache-2.0

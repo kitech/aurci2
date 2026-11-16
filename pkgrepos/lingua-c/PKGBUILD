@@ -5,7 +5,7 @@ pkgname=lingua-c
 _pkgname=lingua
 pkgver=1.8.0
 _pkgver=0.3.0
-pkgrel=3
+pkgrel=4
 pkgdesc="An accurate natural language detection library, suitable for short text and mixed-language text"
 arch=('x86_64')
 url="https://docs.rs/${pkgname}"
@@ -50,7 +50,6 @@ package() {
   # cargo install --frozen --root "${pkgdir}/usr" --path . --no-track
 
   ls -lh target/release/
-  ls -lh ${CARGO_HOME}/bin/
 
   mkdir -p ${pkgdir}/usr/{bin,lib}
   install -Dm755 target/release/liblingua_native.a "${pkgdir}/usr/lib/"

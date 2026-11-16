@@ -117,6 +117,7 @@ jobs:
           vlang-bin
           vlang-git
           vox-git
+          vte-legacy
           zenoh-c
           heidisql-gtk2
           heidisql-gtk2-bin
