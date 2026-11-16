@@ -2,7 +2,7 @@
 
 pkgname=vox-git
 pkgver=0.1.3
-pkgrel=3
+pkgrel=4
 pkgdesc='Browser engine written in V (JavaScriptCore + V UI2)'
 arch=('x86_64')
 url='https://vox-browser.org'
@@ -39,14 +39,20 @@ prepare() {
 
 build() {
   # 上游 pin 的 V 编译器（v.mod 要求其 FastC/JSON 特性）
-  # 用钉住的 vc 快照替换 make 自动从 :master 克隆的引导源码。
-  # 注意：不能删 .git —— GNUmakefile 的 latest_vc 以 $(VC)/.git/config 为前置
-  # 文件，缺失时 make 会走 fresh_vc 重新静默克隆 vc master（上一轮失败原因）。
-  # 保留 .git 并用 GIT=false，使 latest_vc 的 git 探测失败，从而直接使用
-  # 我们钉住的 vc/v.c（"git not found; using existing" 分支）。
+  # 不调用 make：GNUmakefile 的 latest_vc 会尝试 git clean/pull（把我们钉住的
+  # vc 快照拉回 master），fresh_vc 则会静默重新克隆。这里按 GNUmakefile 的
+  # 实际流程手动三步引导，确保 vc pin 100% 生效。
   rm -rf v/vc
   cp -a "$srcdir/vc" v/vc
-  make -C v -j"$(nproc)" VC="$PWD/v/vc" GIT=false VFLAGS='-memory-limit 10G'
+  (
+    cd v
+    # 1) 用钉住的 vc 快照编译 bootstrap 编译器 v1
+    sh cmd/tools/vc_compat.sh vc/v.c cc $CFLAGS \
+      -DCUSTOM_DEFINE_v1_fallback -std=c99 -w -o v1 -- -lm -lpthread $LDFLAGS
+    # 2) v1 自举 v2，v2 再自举最终 v
+    ./v1 -no-parallel -o v2 -gc none -memory-limit 10G -cflags "$CFLAGS" cmd/v
+    ./v2 -o v -gc none -memory-limit 10G -cflags "$CFLAGS" cmd/v
+  )
 
   cd vox
   export V_BIN="$srcdir/v/v"

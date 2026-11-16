@@ -7,12 +7,12 @@
 
 pkgname=sakura-next-git
 pkgver=r0.00000000
-pkgrel=1
+pkgrel=2
 pkgdesc='GTK/VTE based terminal emulator (next branch, main binary renamed to sakura-next)'
 arch=('x86_64')
 url='https://github.com/kitech/sakura'
 license=('GPL-2.0')
-depends=('gtk3' 'vte3' 'glib2' 'libprotobuf-c' 'libx11')
+depends=('gtk3' 'vte3' 'glib2' 'protobuf-c' 'libx11')
 makedepends=('cmake' 'git' 'protobuf' 'protobuf-c' 'perl')
 optdepends=('webkit2gtk-4.1: built-in browser tabs')
 provides=('sakura-next')
