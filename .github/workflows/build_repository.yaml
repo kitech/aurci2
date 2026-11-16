@@ -98,6 +98,7 @@ jobs:
           rclone-lite
           wxwidgets-gtk2
           geany-gtk2
+          sakura-next-git
           filezilla-gtk2
           reqwest-dav-rsc
           libp2p-rsc

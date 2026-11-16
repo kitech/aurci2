@@ -1,0 +1,75 @@
+# Maintainer: aurci2
+# Fork of kitech/sakura "next" branch. The main binary/desktop/man/doc are
+# renamed to sakura-next so this package can be installed alongside `sakura`
+# without file conflicts. Helper binaries (sakura-agent, sakura-ctl,
+# sakura-codex-*) keep their upstream names because the main process looks
+# them up by name at runtime.
+
+pkgname=sakura-next-git
+pkgver=r0.00000000
+pkgrel=1
+pkgdesc='GTK/VTE based terminal emulator (next branch, main binary renamed to sakura-next)'
+arch=('x86_64')
+url='https://github.com/kitech/sakura'
+license=('GPL-2.0')
+depends=('gtk3' 'vte3' 'glib2' 'libprotobuf-c' 'libx11')
+makedepends=('cmake' 'git' 'protobuf' 'protobuf-c' 'perl')
+optdepends=('webkit2gtk-4.1: built-in browser tabs')
+provides=('sakura-next')
+source=("sakura-next::git+https://github.com/kitech/sakura.git#branch=next")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd sakura-next
+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short=8 HEAD)"
+}
+
+prepare() {
+  cd sakura-next
+
+  # 主程序自启动新窗口 / 桌面集成 / 用户配置目录
+  sed -i \
+    -e 's/spawn_argv\[0\] = "sakura";/spawn_argv[0] = "sakura-next";/' \
+    -e 's/g_desktop_app_info_new("sakura.desktop")/g_desktop_app_info_new("sakura-next.desktop")/' \
+    -e 's/g_app_info_create_from_commandline("sakura", "sakura"/g_app_info_create_from_commandline("sakura-next", "sakura-next"/' \
+    -e 's/g_get_user_config_dir(), "sakura"/g_get_user_config_dir(), "sakura-next"/' \
+    src/sakura.c
+
+  # 运行时/缓存目录与已安装的 sakura 隔离。
+  # agent 与 ctl 共用同一份代码，所以两边路径始终一致。
+  sed -i \
+    -e 's/runtime_dir, "sakura"/runtime_dir, "sakura-next"/' \
+    -e 's/g_get_user_cache_dir(), "sakura"/g_get_user_cache_dir(), "sakura-next"/' \
+    -e 's/g_get_user_data_dir(), "sakura"/g_get_user_data_dir(), "sakura-next"/' \
+    src/*.c
+
+  # desktop：显示名 / Exec / TryExec 不能指向被改名的 sakura
+  sed -i \
+    -e 's/^Name=Sakura$/Name=Sakura Next/' \
+    -e 's/^TryExec=sakura$/TryExec=sakura-next/' \
+    -e 's/^Exec=sakura$/Exec=sakura-next/' \
+    sakura.desktop
+}
+
+build() {
+  cmake -S sakura-next -B build \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_BUILD_TYPE=None \
+    -DSAKURA_ENABLE_SANITIZERS=OFF
+  cmake --build build
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+
+  # 开发文件（静态库 / 头文件 / CMake 导出）终端运行用不到，不打包，
+  # 也避免与后续可能出现的 sakura 开发包产生路径重叠。
+  rm -rf "$pkgdir"/usr/lib/*.a "$pkgdir"/usr/include "$pkgdir"/usr/lib/cmake
+
+  # 只改主程序名；sakura-agent / sakura-ctl / sakura-codex-* 保持原名
+  mv "$pkgdir"/usr/bin/sakura "$pkgdir"/usr/bin/sakura-next
+  mv "$pkgdir"/usr/share/applications/sakura.desktop \
+     "$pkgdir"/usr/share/applications/sakura-next.desktop
+  mv "$pkgdir"/usr/share/man/man1/sakura.1 "$pkgdir"/usr/share/man/man1/sakura-next.1
+  mv "$pkgdir"/usr/share/doc/sakura "$pkgdir"/usr/share/doc/sakura-next
+}
