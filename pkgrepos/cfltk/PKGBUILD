@@ -1,0 +1,63 @@
+# Maintainer: Your Name <youremail@domain.com>
+pkgname=cfltk
+pkgver=1.5.23
+pkgrel=1
+pkgdesc="C Bindings for FLTK (used by fltk-rs and zfltk)"
+arch=('x86_64')
+url="https://github.com/MoAlyousef/cfltk"
+license=('MIT')
+depends=(
+    'libx11'
+    'libxext'
+    'libxft'
+    'libxinerama'
+    'libxcursor'
+    'libxrender'
+    'libxfixes'
+    'pango'
+    'cairo'
+    'libgl'
+    'mesa'
+)
+makedepends=(
+    'cmake'
+    'git'
+    'ninja'
+    'gcc'
+)
+provides=('cfltk')
+conflicts=('cfltk-git')
+
+# 通过 #tag= 指定拉取固定的稳定版本标签
+source=("$pkgname-$pkgver::git+https://github.com/MoAlyousef/cfltk.git#tag=$pkgver")
+sha256sums=('SKIP')
+
+prepare() {
+    cd "$pkgname-$pkgver"
+    # 递归初始化并更新 fltk 子模块
+    git submodule update --init --recursive
+}
+
+build() {
+    cmake -B build -S "$pkgname-$pkgver" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DFLTK_BUILD_EXAMPLES=OFF \
+        -DFLTK_BUILD_TEST=OFF \
+        -DFLTK_USE_SYSTEM_LIBPNG=ON \
+        -DFLTK_USE_SYSTEM_LIBJPEG=ON \
+        -DFLTK_USE_SYSTEM_ZLIB=ON \
+        -GNinja
+
+    cmake --build build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+    
+    # 安装许可证文件
+    cd "$pkgname-$pkgver"
+    if [ -f "LICENSE" ]; then
+        install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    fi
+}

@@ -1,0 +1,28 @@
+pkgbase = cfltk
+	pkgdesc = C Bindings for FLTK (used by fltk-rs and zfltk)
+	pkgver = 1.5.23
+	pkgrel = 1
+	url = https://github.com/MoAlyousef/cfltk
+	arch = x86_64
+	license = MIT
+	makedepends = cmake
+	makedepends = git
+	makedepends = ninja
+	makedepends = gcc
+	depends = libx11
+	depends = libxext
+	depends = libxft
+	depends = libxinerama
+	depends = libxcursor
+	depends = libxrender
+	depends = libxfixes
+	depends = pango
+	depends = cairo
+	depends = libgl
+	depends = mesa
+	provides = cfltk
+	conflicts = cfltk-git
+	source = cfltk-1.5.23::git+https://github.com/MoAlyousef/cfltk.git#tag=1.5.23
+	sha256sums = SKIP
+
+pkgname = cfltk

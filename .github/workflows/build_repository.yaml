@@ -34,6 +34,7 @@ on:
 # emacs-lucid
 # chez-scheme
 # netlify 400M+
+#          zeroclaw
 
 jobs:
   build_repository:
@@ -96,12 +97,15 @@ jobs:
           ffmpeg7.1
           libcoap
           rclone-lite
+          kiri-bin
+          cfltk
           wxwidgets-gtk2
           geany-gtk2
           sakura-next-git
           vox-bin
           cookiecloud-api
           signmate
+          doublecmd-gtk2
           filezilla-gtk2
           reqwest-dav-rsc
           lightpanda-bin
@@ -117,7 +121,6 @@ jobs:
           lingua-c
           littlesnitch-bin
           zig-nollvm-git
-          zeroclaw
           codebuff-bin
           lib32-apulse
           horcrux
