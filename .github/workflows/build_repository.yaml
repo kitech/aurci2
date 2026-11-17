@@ -100,6 +100,7 @@ jobs:
           geany-gtk2
           sakura-next-git
           vox-bin
+          cookiecloud-api
           filezilla-gtk2
           reqwest-dav-rsc
           libp2p-rsc

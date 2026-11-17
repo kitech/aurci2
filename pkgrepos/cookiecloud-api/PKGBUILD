@@ -1,0 +1,57 @@
+# Maintainer: aurci2
+# 基于 AUR cookiecloud-api-git，改用稳定 tag release-v1.0.4（2026-10-31）。
+# aux 文件（conf/service/sysusers/tmpfiles）来自 AUR，sha256 已核对一致。
+
+pkgname=cookiecloud-api
+pkgver=1.0.4
+pkgrel=1
+pkgdesc='Synchronizing browser cookies and LocalStorage with a self-hosted server (API Server)'
+arch=('any')
+url='https://github.com/easychen/cookiecloud'
+license=('GPL-3.0-or-later')
+backup=("etc/conf.d/${pkgname}.conf")
+provides=('cookiecloud-api')
+depends=('nodejs')
+makedepends=('yarn')
+source=("https://github.com/easychen/cookiecloud/archive/refs/tags/release-v${pkgver}.tar.gz"
+        "${pkgname}.conf"
+        "${pkgname}.service"
+        "${pkgname}.sysusers"
+        "${pkgname}.tmpfiles")
+sha256sums=('SKIP'
+            '4499428921e978950ad6d0e75ce4c7f4e514b7102a5afeb30de850a0b2a76089'
+            '80916b8d9f6cf7fa5061212bb0158531d8503b6c608ab4831678347e5a64b826'
+            '50e480b690181004c3cfc20724a6d9b18af6d40d739d825b06d4e56711417ff7'
+            '081d3e124f64fd05c1af79680b1fb5776096e6411b69c47349422e57f91b0710')
+
+prepare() {
+  cd "cookiecloud-release-v${pkgver}/api"
+  sed -e '1i #!/usr/bin/node\n' \
+      -e "s|^const data_dir = .*|const data_dir = process\.env\.DATA_DIR \|\| '/var/lib/${pkgname}';|" \
+      -i app.js
+  sed -e "s|^const logDir = .*|const logDir = process\.env\.LOG_DIR \|\| '/var/log/${pkgname}';|" \
+      -i utils/logger.js
+}
+
+build() {
+  cd "cookiecloud-release-v${pkgver}/api"
+  yarn install --production
+}
+
+package() {
+  install -Dm644 "${pkgname}.conf"    "${pkgdir}/etc/conf.d/${pkgname}.conf"
+  install -Dm644 "${pkgname}.service" "${pkgdir}/usr/lib/systemd/system/${pkgname}.service"
+  install -Dm644 "${pkgname}.sysusers" "${pkgdir}/usr/lib/sysusers.d/${pkgname}.conf"
+  install -Dm644 "${pkgname}.tmpfiles" "${pkgdir}/usr/lib/tmpfiles.d/${pkgname}.conf"
+
+  cd "cookiecloud-release-v${pkgver}"
+  install -Dm644 README.md README_cn.md LICENSE -t "${pkgdir}/usr/share/doc/${pkgname}" 2>/dev/null || true
+
+  cd api
+  find . -type f ! -path './.*' ! -path './node_modules/*' -exec \
+    install -Dm644 {} "${pkgdir}/usr/lib/${pkgname}/"{} \;
+  chmod 755 "${pkgdir}/usr/lib/${pkgname}/app.js"
+  cp -r node_modules "${pkgdir}/usr/lib/${pkgname}"
+  install -dm755 "${pkgdir}/usr/bin"
+  ln -s "/usr/lib/${pkgname}/app.js" "${pkgdir}/usr/bin/${pkgname}"
+}
