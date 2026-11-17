@@ -1,0 +1,2 @@
+d /var/lib/signmate 0750 signmate signmate - -
+d /var/log/signmate 0750 signmate signmate - -

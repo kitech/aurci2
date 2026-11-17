@@ -1,0 +1,22 @@
+pkgbase = signmate
+	pkgdesc = SignMate 签伴 - 多站点签到与保活管理
+	pkgver = 0.1.41
+	pkgrel = 1
+	url = https://github.com/HughRyu/SignMate
+	arch = any
+	license = MIT
+	makedepends = npm
+	depends = nodejs
+	depends = chromium
+	optdepends = xvfb: 非无头隐身浏览模式（SIGNMATE_XVFB=1）
+	backup = etc/signmate/.env
+	source = https://github.com/HughRyu/SignMate/archive/refs/tags/v0.1.41.tar.gz
+	source = signmate.service
+	source = signmate.sysusers
+	source = signmate.tmpfiles
+	sha256sums = SKIP
+	sha256sums = SKIP
+	sha256sums = SKIP
+	sha256sums = SKIP
+
+pkgname = signmate

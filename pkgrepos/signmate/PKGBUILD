@@ -1,0 +1,56 @@
+# Maintainer: aurci2
+# SignMate 签伴 —— 多站点签到与保活管理（Node.js 应用，源码构建）。
+# 上游 release 无二进制资产；运行时需要 Chromium（playwright-core），
+# 上游 Docker 用官方 playwright 镜像内置的 Chromium，Arch 下用系统 chromium。
+
+pkgname=signmate
+pkgver=0.1.41
+pkgrel=1
+pkgdesc='SignMate 签伴 - 多站点签到与保活管理'
+arch=('any')
+url='https://github.com/HughRyu/SignMate'
+license=('MIT')
+depends=('nodejs' 'chromium')
+makedepends=('npm')
+optdepends=('xvfb: 非无头隐身浏览模式（SIGNMATE_XVFB=1）')
+backup=('etc/signmate/.env')
+source=("https://github.com/HughRyu/SignMate/archive/refs/tags/v${pkgver}.tar.gz"
+        "signmate.service"
+        "signmate.sysusers"
+        "signmate.tmpfiles")
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+build() {
+  cd "SignMate-${pkgver}"
+  npm ci --omit=dev
+  # 上游 Dockerfile 的构建冒烟：确认打包出的浏览器探测链路可用
+  npm run check:browser
+}
+
+check() {
+  cd "SignMate-${pkgver}"
+  # 纯语法检查，无网络/浏览器依赖
+  npm run check
+}
+
+package() {
+  install -Dm644 signmate.service  "${pkgdir}/usr/lib/systemd/system/signmate.service"
+  install -Dm644 signmate.sysusers "${pkgdir}/usr/lib/sysusers.d/signmate.conf"
+  install -Dm644 signmate.tmpfiles "${pkgdir}/usr/lib/tmpfiles.d/signmate.conf"
+
+  cd "SignMate-${pkgver}"
+  install -Dm644 LICENSE README.md CHANGELOG.md -t "${pkgdir}/usr/share/doc/${pkgname}/"
+  install -Dm644 config/secrets.yaml.example "${pkgdir}/etc/signmate/secrets.yaml.example"
+  install -Dm644 .env.example "${pkgdir}/etc/signmate/.env.example"
+
+  cp -r src scripts "${pkgdir}/usr/lib/${pkgname}/"
+  cp -r node_modules "${pkgdir}/usr/lib/${pkgname}/"
+  install -Dm644 package.json "${pkgdir}/usr/lib/${pkgname}/package.json"
+
+  # PLAYWRIGHT_BROWSERS_PATH 等探测环境变量如首建日志暴露需要，再在 wrapper 补充
+  cat > "${pkgdir}/usr/bin/${pkgname}" <<'EOF'
+#!/bin/sh
+exec node /usr/lib/signmate/src/index.js "$@"
+EOF
+  chmod 755 "${pkgdir}/usr/bin/${pkgname}"
+}

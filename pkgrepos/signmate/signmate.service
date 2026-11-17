@@ -1,0 +1,15 @@
+[Unit]
+Description = SignMate 签伴签到保活服务
+Wants = network-online.target
+After = network-online.target
+
+[Service]
+User = signmate
+Group = signmate
+EnvironmentFile = -/etc/signmate/.env
+WorkingDirectory = /usr/lib/signmate
+ExecStart = /usr/bin/signmate
+Restart = on-failure
+
+[Install]
+WantedBy = multi-user.target
