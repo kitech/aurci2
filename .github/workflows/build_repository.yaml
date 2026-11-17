@@ -101,8 +101,12 @@ jobs:
           sakura-next-git
           vox-bin
           cookiecloud-api
+          signmate
           filezilla-gtk2
           reqwest-dav-rsc
+          lightpanda-bin
+          lightpanda
+          obscura-browser-bin
           libp2p-rsc
           qt3-tde
           matterbridge-lite
