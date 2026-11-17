@@ -99,6 +99,7 @@ jobs:
           wxwidgets-gtk2
           geany-gtk2
           sakura-next-git
+          vox-bin
           filezilla-gtk2
           reqwest-dav-rsc
           libp2p-rsc

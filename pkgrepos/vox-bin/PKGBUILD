@@ -1,0 +1,45 @@
+# Vox Browser — 官方 release 二进制（deb 解包）
+pkgname=vox-bin
+pkgver=0.1.4
+pkgrel=2
+pkgdesc='Browser engine written in V (JavaScriptCore + V UI2) (official release binary)'
+arch=('x86_64')
+url='https://vox-browser.org'
+license=('GPL-3.0-or-later')
+depends=('webkit2gtk-4.1' 'glib2' 'harfbuzz' 'fontconfig' 'freetype2'
+         'curl' 'openssl' 'mesa' 'libxi' 'libxcursor' 'libxrandr' 'libx11'
+         'alsa-lib' 'gc' 'libwebp' 'libpng' 'libjpeg-turbo')
+provides=('vox')
+conflicts=('vox' 'vox-git')
+source=("Vox-${pkgver}-amd64.deb::https://github.com/vox-browser/vox/releases/download/${pkgver}/Vox-${pkgver}-amd64.deb"
+        "SHA256SUMS::https://github.com/vox-browser/vox/releases/download/${pkgver}/SHA256SUMS")
+sha256sums=('SKIP' 'SKIP')
+
+package() {
+  cd "$srcdir"
+
+  # 校验官方 SHA256SUMS（防止下载不完整/被篡改）
+  local _sha
+  _sha="$(awk '/Vox-'"${pkgver}"'-amd64\.deb$/{print $1}' SHA256SUMS)"
+  if ! echo "${_sha}  Vox-${pkgver}-amd64.deb" | sha256sum -c --status; then
+    echo 'SHA256 mismatch' >&2
+    return 1
+  fi
+
+  # deb = ar( debian-binary control.tar.* data.tar.* )
+  # data.tar 的压缩算法（xz/zst/gz）由上游打包工具决定，不可假设：
+  # 用 bsdtar（libarchive，core 系统自带）解 ar 成员并自动识别压缩格式，
+  # 同时兼容 zstd（新 dpkg 默认）/ xz / gz。
+  mkdir -p payload
+  bsdtar -xOf "Vox-${pkgver}-amd64.deb" 'data.tar.*' \
+    | bsdtar -xf - -C payload
+
+  # 复制 deb 内整个 usr 树（bin/vox、图标、desktop 等按上游布局）
+  cp -a payload/usr/. "$pkgdir/usr/"
+
+  # LICENSE 从 deb 的 copyright 补充
+  if [ -f payload/usr/share/doc/vox/copyright ]; then
+    install -Dm644 payload/usr/share/doc/vox/copyright \
+      "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  fi
+}
