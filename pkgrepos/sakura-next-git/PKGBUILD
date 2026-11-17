@@ -7,7 +7,7 @@
 
 pkgname=sakura-next-git
 pkgver=r0.00000000
-pkgrel=2
+pkgrel=3
 pkgdesc='GTK/VTE based terminal emulator (next branch, main binary renamed to sakura-next)'
 arch=('x86_64')
 url='https://github.com/kitech/sakura'
@@ -65,6 +65,15 @@ package() {
   # 开发文件（静态库 / 头文件 / CMake 导出）终端运行用不到，不打包，
   # 也避免与后续可能出现的 sakura 开发包产生路径重叠。
   rm -rf "$pkgdir"/usr/lib/*.a "$pkgdir"/usr/include "$pkgdir"/usr/lib/cmake
+
+  # 排除与 AUR sakura 冲突的文件（均为非必需）：
+  # 1) po/CMakeLists.txt 以 catalogname "sakura" 安装所有 <lang>.mo，
+  #    文件名固定为 sakura.mo 无法安全改名（需同时改 GETTEXT_PACKAGE），
+  #    直接不装翻译（运行时只是回退英文，无功能影响）；
+  # 2) terminal-tango.svg 与原版同名；程序图标用的是
+  #    ICON_NAME "org.gnome.Terminal"，不引用该文件。
+  rm -rf "$pkgdir"/usr/share/locale/*/LC_MESSAGES/sakura.mo
+  rm -f  "$pkgdir"/usr/share/pixmaps/terminal-tango.svg
 
   # 只改主程序名；sakura-agent / sakura-ctl / sakura-codex-* 保持原名
   mv "$pkgdir"/usr/bin/sakura "$pkgdir"/usr/bin/sakura-next
