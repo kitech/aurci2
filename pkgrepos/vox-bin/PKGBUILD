@@ -1,7 +1,7 @@
 # Vox Browser — 官方 release 二进制（deb 解包）
 pkgname=vox-bin
-pkgver=0.1.4
-pkgrel=2
+pkgver=0.1.5
+pkgrel=1
 pkgdesc='Browser engine written in V (JavaScriptCore + V UI2) (official release binary)'
 arch=('x86_64')
 url='https://vox-browser.org'

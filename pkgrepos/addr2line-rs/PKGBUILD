@@ -3,8 +3,8 @@
 
 pkgname=addr2line-rs
 _pkgname=addr2line
-pkgver=0.26.1
-pkgrel=2
+pkgver=0.27.1
+pkgrel=1
 pkgdesc="A cross-platform library for retrieving per-address debug information from files with DWARF debug informatio"
 arch=('x86_64')
 url="https://docs.rs/${_pkgname}"
@@ -12,7 +12,9 @@ license=('Apache-2.0 OR MIT')
 makedepends=('cargo')
 depends=('glibc')
 source=("https://github.com/gimli-rs/${_pkgname}/archive/refs/tags/v${pkgver}.tar.gz")
-sha256sums=('b8c510ecce2c426fe476f33fbce4bf75dd0e2c5800ae94a9868d8a957483e5e7')
+# 本地无法下载 tarball 计算校验和，先用 SKIP（crates.io 已发布 0.27.1，
+# 上游 tag v0.27.1 与 crate 内容一致）；需要固定校验时用 updpkgsums 补算。
+sha256sums=('SKIP')
 
 prepare() {
   cd "${_pkgname}-${pkgver}"

@@ -1,7 +1,7 @@
 pkgbase = vox-bin
 	pkgdesc = Browser engine written in V (JavaScriptCore + V UI2) (official release binary)
-	pkgver = 0.1.4
-	pkgrel = 2
+	pkgver = 0.1.5
+	pkgrel = 1
 	url = https://vox-browser.org
 	arch = x86_64
 	license = GPL-3.0-or-later
@@ -25,8 +25,8 @@ pkgbase = vox-bin
 	provides = vox
 	conflicts = vox
 	conflicts = vox-git
-	source = Vox-0.1.4-amd64.deb::https://github.com/vox-browser/vox/releases/download/0.1.4/Vox-0.1.4-amd64.deb
-	source = SHA256SUMS::https://github.com/vox-browser/vox/releases/download/0.1.4/SHA256SUMS
+	source = Vox-0.1.5-amd64.deb::https://github.com/vox-browser/vox/releases/download/0.1.5/Vox-0.1.5-amd64.deb
+	source = SHA256SUMS::https://github.com/vox-browser/vox/releases/download/0.1.5/SHA256SUMS
 	sha256sums = SKIP
 	sha256sums = SKIP
 
