@@ -106,6 +106,8 @@ jobs:
           vox-bin
           cookiecloud-api
           signmate
+          libp2p-lite-rsc
+          libp2p-lite-goc
           doublecmd-gtk2
           filezilla-gtk2
           reqwest-dav-rsc

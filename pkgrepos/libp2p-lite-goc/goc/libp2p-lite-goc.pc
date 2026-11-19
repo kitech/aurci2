@@ -1,0 +1,9 @@
+prefix=/usr
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: libp2p-lite-goc
+Description: Event-driven C API for the QUIC-free go-libp2p fork (Go c-shared)
+Version: 0.49.0
+Libs: -L${libdir} -lp2p-lite-goc
+Cflags: -I${includedir}/libp2p-lite-goc

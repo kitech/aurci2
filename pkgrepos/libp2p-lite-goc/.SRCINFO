@@ -1,0 +1,25 @@
+pkgbase = libp2p-lite-goc
+	pkgdesc = Event-driven C API for the QUIC-free go-libp2p fork (Go c-shared), API-compatible with libp2p-rsc
+	pkgver = 0.49.0
+	pkgrel = 1
+	url = https://github.com/envsh/peerscale
+	arch = x86_64
+	license = MIT
+	makedepends = go
+	makedepends = git
+	depends = glibc
+	options = !lto
+	source = peerscale::git+https://github.com/envsh/peerscale.git#commit=d8d1faef5eec
+	source = goc/libp2p-lite-goc.go
+	source = goc/libp2p-lite-goc.h
+	source = goc/go.mod
+	source = goc/go.sum
+	source = goc/libp2p-lite-goc.pc
+	sha256sums = SKIP
+	sha256sums = ecd82549a183551f1569793d6ab4e7fc591b1acf6c41b3b98dab81fa8aacbbd5
+	sha256sums = 61378784b34a26e52064aa08fba201afa6dd6fb035694d299dae12dd87c7b0a6
+	sha256sums = a3590275b2352609e547730ba67451f341ef56850a4a847ab31195e0933f8ff3
+	sha256sums = 3dc67bed22067851a2412830d1ae99a1a1d8d8667f3483cd584e6683bedf5c37
+	sha256sums = 09327585a85dd6237be747195111c4c4a0b8479a23f6f7eb634f22769d204b76
+
+pkgname = libp2p-lite-goc

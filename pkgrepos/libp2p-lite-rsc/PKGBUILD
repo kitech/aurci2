@@ -1,0 +1,53 @@
+# Maintainer: aurci2
+# libp2p-rsc 的 lite 变体：去掉 QUIC 传输（对齐 myvendor/go-libp2p 的精简做法：
+# 只保留 tcp/dns，移除 quic 后不再编译 quinn/rustls/rcgen/qlog 一整条依赖链）。
+# 源码复用 ../libp2p-rsc/crate，构建时生成 lite 变体（单一事实源）。
+
+pkgname=libp2p-lite-rsc
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Event-driven C API for the Rust libp2p crate without QUIC (libp2p-lite-rsc)'
+arch=('x86_64')
+url='https://github.com/libp2p/rust-libp2p'
+license=('MIT')
+depends=('glibc' 'gcc-libs')
+makedepends=('rust' 'cargo')
+source=()
+sha256sums=()
+
+build() {
+  cd "$startdir"
+
+  # 从 libp2p-rsc 复制单一源码，生成 lite 变体
+  rm -rf crate-lite
+  cp -a ../libp2p-rsc/crate crate-lite
+
+  # 去掉 quic feature / 改 Cargo 包名与 lib 名
+  sed -i -e 's/"quic", //' \
+         -e 's/^name = "l2p"$/name = "l2p_lite"/' \
+         -e 's/^name = "p2p_rsc"$/name = "p2p_lite_rsc"/' \
+         crate-lite/Cargo.toml
+  # 唯一的代码改动：移除 .with_quic()
+  sed -i '/\.with_quic()/d' crate-lite/lib.rs
+  # 头文件 / pkg-config 改名
+  sed -i -e 's/libp2p-rsc/libp2p-lite-rsc/g' \
+         -e 's/-lp2p-rsc/-lp2p-lite-rsc/g' \
+         -e 's/LIBP2P_RSC_H/LIBP2P_LITE_RSC_H/g' \
+         crate-lite/libp2p-rsc.h crate-lite/libp2p-rsc.pc
+  mv crate-lite/libp2p-rsc.h  crate-lite/libp2p-lite-rsc.h
+  mv crate-lite/libp2p-rsc.pc crate-lite/libp2p-lite-rsc.pc
+
+  export CARGO_HOME="$srcdir/cargo-home"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  # 修正 SONAME：Cargo 产出 libp2p_lite_rsc.so，安装为 libp2p-lite-rsc.so 后
+  # 运行时加载器按 SONAME 查找，必须 embed 与安装名一致
+  export RUSTFLAGS="-C link-arg=-Wl,-soname,libp2p-lite-rsc.so"
+  cargo build --release --manifest-path crate-lite/Cargo.toml
+}
+
+package() {
+  install -Dm0755 "$srcdir/target/release/libp2p_lite_rsc.so" "$pkgdir/usr/lib/libp2p-lite-rsc.so"
+  install -Dm0644 "$srcdir/target/release/libp2p_lite_rsc.a"  "$pkgdir/usr/lib/libp2p-lite-rsc.a"
+  install -Dm0644 "$startdir/crate-lite/libp2p-lite-rsc.h"    "$pkgdir/usr/include/libp2p-lite-rsc.h"
+  install -Dm0644 "$startdir/crate-lite/libp2p-lite-rsc.pc"   "$pkgdir/usr/lib/pkgconfig/libp2p-lite-rsc.pc"
+}

@@ -1,0 +1,54 @@
+# Maintainer: aurci2
+# Go (c-shared) 版本的 libp2p C API，与 libp2p-rsc 的 42 个 l2p_* 函数一一对应。
+# 使用 envsh/peerscale 中去掉 QUIC 的 go-libp2p fork（只保留 tcp/ws 传输）。
+# 注意：该 .so 内嵌 Go runtime，不支持 dlclose()；详情见安装后的头文件注释。
+
+pkgname=libp2p-lite-goc
+pkgver=0.49.0
+pkgrel=1
+pkgdesc='Event-driven C API for the QUIC-free go-libp2p fork (Go c-shared), API-compatible with libp2p-rsc'
+arch=('x86_64')
+url='https://github.com/envsh/peerscale'
+license=('MIT')
+depends=('glibc')
+makedepends=('go' 'git')
+options=('!lto')
+source=(
+  "peerscale::git+https://github.com/envsh/peerscale.git#commit=d8d1faef5eec"
+  "goc/libp2p-lite-goc.go"
+  "goc/libp2p-lite-goc.h"
+  "goc/go.mod"
+  "goc/go.sum"
+  "goc/libp2p-lite-goc.pc"
+)
+sha256sums=(
+  'SKIP'
+  'ecd82549a183551f1569793d6ab4e7fc591b1acf6c41b3b98dab81fa8aacbbd5'
+  '61378784b34a26e52064aa08fba201afa6dd6fb035694d299dae12dd87c7b0a6'
+  'a3590275b2352609e547730ba67451f341ef56850a4a847ab31195e0933f8ff3'
+  '3dc67bed22067851a2412830d1ae99a1a1d8d8667f3483cd584e6683bedf5c37'
+  '09327585a85dd6237be747195111c4c4a0b8479a23f6f7eb634f22769d204b76'
+)
+
+build() {
+  cd "$srcdir/goc"
+
+  # go.mod 中的 replace 指向 ../peerscale/myvendor/go-libp2p[-asn-util]，
+  # 与 source 中 git 检出目录名一致。
+  export GOPATH="$srcdir/gopath"
+  export GOCACHE="$srcdir/gocache"
+  export CGO_ENABLED=1
+
+  mkdir -p "$srcdir/out"
+  # -o 放到独立目录，避免 go 生成的 header 覆盖手写 API header；
+  # SONAME 显式设为安装名，运行时加载器按此名字查找。
+  go build -buildmode=c-shared \
+    -ldflags="-extldflags=-Wl,-soname,libp2p-lite-goc.so" \
+    -o "$srcdir/out/libp2p-lite-goc.so" .
+}
+
+package() {
+  install -Dm0755 "$srcdir/out/libp2p-lite-goc.so" "$pkgdir/usr/lib/libp2p-lite-goc.so"
+  install -Dm0644 "$srcdir/goc/libp2p-lite-goc.h" "$pkgdir/usr/include/libp2p-lite-goc.h"
+  install -Dm0644 "$srcdir/goc/libp2p-lite-goc.pc" "$pkgdir/usr/lib/pkgconfig/libp2p-lite-goc.pc"
+}
