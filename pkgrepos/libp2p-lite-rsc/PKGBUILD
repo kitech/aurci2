@@ -18,9 +18,10 @@ sha256sums=()
 build() {
   cd "$startdir"
 
-  # 从 libp2p-rsc 复制单一源码，生成 lite 变体
+  # 从本包内置的 crate 复制单一源码，生成 lite 变体
+  # （CI 只复制单个包目录到 /tmp/$pkg，兄弟目录 ../libp2p-rsc 不存在）
   rm -rf crate-lite
-  cp -a ../libp2p-rsc/crate crate-lite
+  cp -a crate crate-lite
 
   # 去掉 quic feature / 改 Cargo 包名与 lib 名
   sed -i -e 's/"quic", //' \

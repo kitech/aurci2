@@ -1,0 +1,46 @@
+# Apache OpenDAL C binding (libopendal_c) — Rust core + cbindgen C API.
+# 直接 cargo build，绕过 bindings/c 的 CMake（其 configure 会 FetchContent 拉
+# googletest 并构建 examples/tests，打包不需要）。
+
+pkgname=opendal-rsc
+pkgver=0.59.5
+pkgrel=1
+pkgdesc='C binding for Apache OpenDAL: one API for S3, GCS, fs and 50+ storage services'
+arch=('x86_64')
+url='https://github.com/apache/opendal'
+license=('Apache-2.0')
+depends=('glibc' 'gcc-libs')
+makedepends=('rust' 'cargo' 'git' 'gcc')
+source=("opendal::git+https://github.com/apache/opendal.git#tag=v${pkgver}")
+sha256sums=('SKIP')
+
+# 启用的 OpenDAL 服务；按需追加：
+#   opendal/services-s3,opendal/services-gcs,opendal/services-azblob,
+#   opendal/services-obs,opendal/services-webdav ...
+_features='opendal/services-memory,opendal/services-fs'
+
+build() {
+  cd opendal/bindings/c
+  export CARGO_HOME="$srcdir/cargo-home"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  cargo build --release --features="$_features"
+}
+
+package() {
+  install -Dm0755 "$srcdir/target/release/libopendal_c.so" "$pkgdir/usr/lib/libopendal_c.so"
+  install -Dm0644 "$srcdir/target/release/libopendal_c.a"  "$pkgdir/usr/lib/libopendal_c.a"
+  install -Dm0644 "$srcdir/opendal/bindings/c/include/opendal.h" "$pkgdir/usr/include/opendal.h"
+
+  install -d "$pkgdir/usr/lib/pkgconfig"
+  cat > "$pkgdir/usr/lib/pkgconfig/opendal_c.pc" <<EOF
+prefix=/usr
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: opendal_c
+Description: Apache OpenDAL C binding
+Version: ${pkgver}
+Libs: -L\${libdir} -lopendal_c
+Cflags: -I\${includedir}
+EOF
+}
