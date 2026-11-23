@@ -4,7 +4,7 @@
 
 pkgname=opendal-rsc
 pkgver=0.59.5
-pkgrel=1
+pkgrel=2
 pkgdesc='C binding for Apache OpenDAL: one API for S3, GCS, fs and 50+ storage services'
 arch=('x86_64')
 url='https://github.com/apache/opendal'
@@ -17,7 +17,7 @@ sha256sums=('SKIP')
 # 启用的 OpenDAL 服务；按需追加：
 #   opendal/services-s3,opendal/services-gcs,opendal/services-azblob,
 #   opendal/services-obs,opendal/services-webdav ...
-_features='opendal/services-memory,opendal/services-fs'
+_features='opendal/services-memory,opendal/services-fs,opendal/services-github,opendal/services-sftp,opendal/services-webdav,opendal/services-http'
 
 build() {
   cd opendal/bindings/c

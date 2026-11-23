@@ -1,7 +1,7 @@
 pkgbase = opendal-rsc
 	pkgdesc = C binding for Apache OpenDAL: one API for S3, GCS, fs and 50+ storage services
 	pkgver = 0.59.5
-	pkgrel = 1
+	pkgrel = 2
 	url = https://github.com/apache/opendal
 	arch = x86_64
 	license = Apache-2.0
