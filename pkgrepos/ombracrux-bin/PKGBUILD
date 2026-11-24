@@ -1,12 +1,12 @@
 # Maintainer: aurci2
 pkgname=ombracrux-bin
 pkgver=0.3.0
-pkgrel=1
+pkgrel=2
 pkgdesc='Shamir threshold archive engine (official prebuilt .deb)'
 arch=('x86_64')
 url='https://github.com/ABiswasDev/Ombracrux'
 license=('PolyForm-Noncommercial-1.0.0')
-depends=('gtk3' 'webkit2gtk-4.1' 'libayatana-appindicator' 'librsvg2')
+depends=('gtk3' 'webkit2gtk-4.1' 'libayatana-appindicator' 'librsvg')
 provides=('ombracrux')
 conflicts=('ombracrux')
 options=('!strip')

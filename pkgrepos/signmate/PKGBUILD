@@ -5,7 +5,7 @@
 
 pkgname=signmate
 pkgver=0.1.41
-pkgrel=2
+pkgrel=4
 pkgdesc='SignMate 签伴 - 多站点签到与保活管理'
 arch=('any')
 url='https://github.com/HughRyu/SignMate'
@@ -53,11 +53,13 @@ package() {
   install -Dm644 config/secrets.yaml.example "${pkgdir}/etc/signmate/secrets.yaml.example"
   install -Dm644 .env.example "${pkgdir}/etc/signmate/.env.example"
 
+  install -d "${pkgdir}/usr/lib/${pkgname}"
   cp -r src scripts "${pkgdir}/usr/lib/${pkgname}/"
   cp -r node_modules "${pkgdir}/usr/lib/${pkgname}/"
   install -Dm644 package.json "${pkgdir}/usr/lib/${pkgname}/package.json"
 
   # PLAYWRIGHT_BROWSERS_PATH 等探测环境变量如首建日志暴露需要，再在 wrapper 补充
+  install -d "${pkgdir}/usr/bin"
   cat > "${pkgdir}/usr/bin/${pkgname}" <<'EOF'
 #!/bin/sh
 exec node /usr/lib/signmate/src/index.js "$@"

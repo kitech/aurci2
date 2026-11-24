@@ -2,7 +2,7 @@
 
 pkgname=vox-git
 pkgver=0.1.3
-pkgrel=6
+pkgrel=8
 pkgdesc='Browser engine written in V (JavaScriptCore + V UI2)'
 arch=('x86_64')
 url='https://vox-browser.org'
@@ -14,14 +14,11 @@ makedepends=('clang' 'pkgconf' 'git' 'python')
 provides=('vox')
 conflicts=('vox')
 
-# 上游 CI 固定的 V 编译器；UI2 无 tag，只能钉 commit
-_vcommit=f7f3add7af3c4615ba5dbedc06e18f76ef604346
-_uicommit=a9fb7e043e41e8133f642942da43e4f74d2ea592
-# 不再单独钉 vc/tccbin：上游 CI 对同一个 V 版本也是让 GNUmakefile 自行拉取
-# 当前 vc/tcc 快照。手工自举旧 vc 会生成未声明 it 的 C 代码，导致 v2 编译失败。
+# 全部跟随上游 HEAD，不固定 git commit；pkgver 仍由 vox 的 git describe 生成。
+# GNUmakefile 会自行拉取与 V 匹配的 vc/tcc 快照。
 source=("vox::git+https://github.com/vox-browser/vox.git"
-        "v::git+https://github.com/vlang/v.git#commit=${_vcommit}"
-        "ui2::git+https://github.com/vlang/ui2.git#commit=${_uicommit}")
+        "v::git+https://github.com/vlang/v.git"
+        "ui2::git+https://github.com/vlang/ui2.git")
 sha256sums=('SKIP' 'SKIP' 'SKIP')
 
 pkgver() {
@@ -35,9 +32,13 @@ prepare() {
 }
 
 build() {
-  # 与上游 linux-build.yml 一致：固定 V 源码版本，但让 GNUmakefile 拉取与当前
-  # 工具链兼容的 vc/tcc 快照，避免手工自举旧 vc 产生的 C 生成错误。
-  make -C v -j2 VFLAGS='-memory-limit 10G'
+  # 显式 -cc clang：V 不会进入 implicit tcc 分支，避免
+  # "tcc: error: unsupported linker option '-O1'" 后回退到 /usr/bin/cc。
+  # VFLAGS 会被合并进所有 V 调用（含 build-linux-browser.sh 内部的 v_tool）。
+  export VFLAGS='-cc clang'
+  export CC=clang
+
+  make -C v -j2 CC=clang VFLAGS='-cc clang -memory-limit 10G'
 
   cd vox
   export V_BIN="$srcdir/v/v"

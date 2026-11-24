@@ -7,14 +7,14 @@
 
 pkgname=psi-plus-nobr
 pkgver=1.5.1692.r4652.g4b93355d
-pkgrel=1
+pkgrel=2
 pkgdesc="Psi+ is a powerful XMPP client (Qt, C++) designed for the XMPP power users (built with Qt 5.x, no WebEngine)"
 url="https://psi-plus.com"
 license=('GPL2')
 arch=('x86_64')
 depends=('qt5-base' 'qt5-multimedia' 'qt5-x11extras'
 	 'libidn' 'libxss' 'qt5-svg' 'hunspell' 'qtkeychain-qt5' 'http-parser' 'libusrsctp')
-makedepends=('git' 'patch' 'cmake')
+makedepends=('git' 'patch' 'cmake' 'openssl')
 provides=("psi-plus=$pkgver" "psi-plus-qt5-git=$pkgver")
 conflicts=('psi-plus' 'psi-plus-qt5-git' 'psi-plus-webkit-qt5-git' 'psi-plus-webkit-git' 'psi-plus-git')
 source=('git+https://github.com/psi-im/psi.git'
@@ -52,7 +52,9 @@ prepare() {
 
 build() {
   # CHAT_TYPE=BASIC -> no WebEngine/WebKit chatlog; qt5-webengine not needed.
-  cmake -B build -S psi -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUNDLED_USRSCTP=ENABLE -DBUNDLED_QCA=ENABLE -DPSI_PLUS=ON -DCHAT_TYPE=BASIC  ..
+  # Iris 现在识别的是 IRIS_BUNDLED_QCA；旧的 BUNDLED_QCA 会被忽略，
+  # 导致 cmake 去系统找 QCA 并报 "No usable system QCA found"。
+  cmake -B build -S psi -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUNDLED_USRSCTP=ENABLE -DIRIS_BUNDLED_QCA=ON -DPSI_PLUS=ON -DCHAT_TYPE=BASIC  ..
   cmake --build build
 }
 
