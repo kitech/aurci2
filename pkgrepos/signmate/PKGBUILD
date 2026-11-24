@@ -5,7 +5,7 @@
 
 pkgname=signmate
 pkgver=0.1.41
-pkgrel=1
+pkgrel=2
 pkgdesc='SignMate 签伴 - 多站点签到与保活管理'
 arch=('any')
 url='https://github.com/HughRyu/SignMate'
@@ -19,6 +19,16 @@ source=("https://github.com/HughRyu/SignMate/archive/refs/tags/v${pkgver}.tar.gz
         "signmate.sysusers"
         "signmate.tmpfiles")
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+prepare() {
+  cd "SignMate-${pkgver}"
+
+  # npm 12 rejects registry tarballs as remote URLs when they point to a
+  # mirror. Rewrite them back to the canonical npm registry before npm ci.
+  if [[ -f package-lock.json ]]; then
+    sed -i 's#https://registry\.npmmirror\.com/#https://registry.npmjs.org/#g' package-lock.json
+  fi
+}
 
 build() {
   cd "SignMate-${pkgver}"

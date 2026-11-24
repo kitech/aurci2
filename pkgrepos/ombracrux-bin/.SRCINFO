@@ -1,0 +1,20 @@
+pkgbase = ombracrux-bin
+	pkgdesc = Shamir threshold archive engine (official prebuilt .deb)
+	pkgver = 0.3.0
+	pkgrel = 1
+	url = https://github.com/ABiswasDev/Ombracrux
+	arch = x86_64
+	license = PolyForm-Noncommercial-1.0.0
+	depends = gtk3
+	depends = webkit2gtk-4.1
+	depends = libayatana-appindicator
+	depends = librsvg2
+	provides = ombracrux
+	conflicts = ombracrux
+	options = !strip
+	source = Ombracrux_0.3.0_amd64.deb::https://github.com/ABiswasDev/Ombracrux/releases/download/v0.3.0-beta/Ombracrux_0.3.0_amd64.deb
+	source = LICENSE::https://raw.githubusercontent.com/ABiswasDev/Ombracrux/v0.3.0-beta/LICENSE
+	sha256sums = 3fbd96349b9190f21bf1cd1ad2e85b110285168480121fdb08c7f4ccd26aeb3f
+	sha256sums = SKIP
+
+pkgname = ombracrux-bin

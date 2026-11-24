@@ -1,0 +1,36 @@
+# Maintainer: aurci2
+pkgname=ombracrux-bin
+pkgver=0.3.0
+pkgrel=1
+pkgdesc='Shamir threshold archive engine (official prebuilt .deb)'
+arch=('x86_64')
+url='https://github.com/ABiswasDev/Ombracrux'
+license=('PolyForm-Noncommercial-1.0.0')
+depends=('gtk3' 'webkit2gtk-4.1' 'libayatana-appindicator' 'librsvg2')
+provides=('ombracrux')
+conflicts=('ombracrux')
+options=('!strip')
+source=(
+  "Ombracrux_${pkgver}_amd64.deb::https://github.com/ABiswasDev/Ombracrux/releases/download/v0.3.0-beta/Ombracrux_${pkgver}_amd64.deb"
+  "LICENSE::https://raw.githubusercontent.com/ABiswasDev/Ombracrux/v0.3.0-beta/LICENSE"
+)
+sha256sums=(
+  '3fbd96349b9190f21bf1cd1ad2e85b110285168480121fdb08c7f4ccd26aeb3f'
+  'SKIP'
+)
+
+package() {
+  cd "$srcdir"
+
+  # deb = ar( debian-binary control.tar.* data.tar.* )
+  # 用 bsdtar 自动识别 data.tar 的 zst/xz/gz 压缩
+  mkdir -p payload
+  bsdtar -xOf "Ombracrux_${pkgver}_amd64.deb" 'data.tar.*' \
+    | bsdtar -xf - -C payload
+
+  # 保留上游完整 usr 布局（二进制、desktop、图标等）
+  cp -a payload/usr/. "$pkgdir/usr/"
+
+  install -Dm644 LICENSE \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

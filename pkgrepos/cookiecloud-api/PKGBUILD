@@ -4,7 +4,7 @@
 
 pkgname=cookiecloud-api
 pkgver=1.0.4
-pkgrel=1
+pkgrel=2
 pkgdesc='Synchronizing browser cookies and LocalStorage with a self-hosted server (API Server)'
 arch=('any')
 url='https://github.com/easychen/cookiecloud'
@@ -25,7 +25,7 @@ sha256sums=('SKIP'
             '081d3e124f64fd05c1af79680b1fb5776096e6411b69c47349422e57f91b0710')
 
 prepare() {
-  cd "cookiecloud-release-v${pkgver}/api"
+  cd "CookieCloud-release-v${pkgver}/api"
   sed -e '1i #!/usr/bin/node\n' \
       -e "s|^const data_dir = .*|const data_dir = process\.env\.DATA_DIR \|\| '/var/lib/${pkgname}';|" \
       -i app.js
@@ -34,7 +34,7 @@ prepare() {
 }
 
 build() {
-  cd "cookiecloud-release-v${pkgver}/api"
+  cd "CookieCloud-release-v${pkgver}/api"
   yarn install --production
 }
 
@@ -44,7 +44,7 @@ package() {
   install -Dm644 "${pkgname}.sysusers" "${pkgdir}/usr/lib/sysusers.d/${pkgname}.conf"
   install -Dm644 "${pkgname}.tmpfiles" "${pkgdir}/usr/lib/tmpfiles.d/${pkgname}.conf"
 
-  cd "cookiecloud-release-v${pkgver}"
+  cd "CookieCloud-release-v${pkgver}"
   install -Dm644 README.md README_cn.md LICENSE -t "${pkgdir}/usr/share/doc/${pkgname}" 2>/dev/null || true
 
   cd api

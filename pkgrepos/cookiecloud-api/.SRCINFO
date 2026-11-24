@@ -1,7 +1,7 @@
 pkgbase = cookiecloud-api
 	pkgdesc = Synchronizing browser cookies and LocalStorage with a self-hosted server (API Server)
 	pkgver = 1.0.4
-	pkgrel = 1
+	pkgrel = 2
 	url = https://github.com/easychen/cookiecloud
 	arch = any
 	license = GPL-3.0-or-later

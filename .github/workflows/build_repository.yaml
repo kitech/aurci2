@@ -51,6 +51,7 @@ jobs:
       with:
         token: ${{ github.token }}
         repourl: ${{ github.repo }}
+        missing_aur_dependencies: qtkeychain-qt5
         packages: >
           chez-scheme
           lib32-libxpm
@@ -127,6 +128,8 @@ jobs:
           codebuff-bin
           lib32-apulse
           horcrux
+          horcrux-git
+          ombracrux-bin
           vlang-bin
           vlang-git
           vox-git
