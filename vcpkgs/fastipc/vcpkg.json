@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "fastipc",
+  "version-string": "1.0.0",
+  "description": "High-performance shared-memory IPC with a C API",
+  "homepage": "https://github.com/fastipc/fastipc",
+  "license": "MIT",
+  "supports": "((linux & (x64 | arm64) & !static) | (osx & (x64 | arm64)) | (android & arm64) | (windows & x64 & !uwp & !staticcrt))",
+  "dependencies": []
+}

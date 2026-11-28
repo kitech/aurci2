@@ -97,6 +97,7 @@ jobs:
           turso-bin
           ffmpeg7.1
           libcoap
+          dfl-ipc
           rclone-lite
           kiri-bin
           hack-browser-data
@@ -133,6 +134,7 @@ jobs:
           vlang-bin
           vlang-git
           vox-git
+          appimageupdate-git
           vte-legacy
           zenoh-c
           heidisql-gtk2

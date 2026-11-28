@@ -1,0 +1,6 @@
+fastipc provides CMake targets:
+
+    find_package(unofficial-fastipc CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE unofficial::fastipc::fastipc)
+
+On Windows, FASTIPC_SHARED=1 is added automatically by the imported target.
